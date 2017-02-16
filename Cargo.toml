@@ -1,0 +1,6 @@
+[package]
+name = "ragtime"
+version = "0.1.0"
+authors = ["myoshida <myoshida@aiming-inc.com>"]
+
+[dependencies]
