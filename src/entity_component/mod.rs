@@ -4,25 +4,28 @@ use std::rc::Weak;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 
-type SubComponentType = i32;
-type EntityID = i32;
+pub type SubComponentType = i32;
+pub type EntityID = i32;
 
-trait SubComponent {
+pub trait SubComponent {
     fn start(&mut self);
     fn update(&mut self);
 }
 
 type Entity<T> = HashMap<SubComponentType, Weak<Component<T>>>;
 
-struct Component<T:SubComponent> {
+pub struct Component<T:SubComponent> {
     entity_id:EntityID,
     first_call:bool,
     sub_component:T,
 }
 
 impl<T> Component<T> where T:SubComponent {
-    fn entity_id(&self) -> EntityID {
+    pub fn entity_id(&self) -> EntityID {
         self.entity_id
+    }
+    pub fn sub_component(&self) -> &T {
+        &self.sub_component
     }
     fn start(&mut self) {
         self.sub_component.start();
@@ -36,13 +39,13 @@ impl<T> Component<T> where T:SubComponent {
     }
 }
 
-struct System<T:SubComponent> {
+pub struct System<T:SubComponent> {
     components:BTreeMap<SubComponentType,Vec<Rc<Component<T>>>>,
     entities:HashMap<EntityID,Entity<T>>,
 }
 
 impl<T> System<T> where T:SubComponent {
-    fn update(&mut self) {
+    pub fn update(&mut self) {
         for (_,comps) in self.components.iter_mut() {
             for c in comps.iter_mut() {
                 if let Some(c) = Rc::get_mut(c) {
@@ -52,7 +55,7 @@ impl<T> System<T> where T:SubComponent {
         }
     }
 
-    fn add_component(&mut self, comp_type:SubComponentType, c:Component<T>) -> Weak<Component<T>> {
+    pub fn add_component(&mut self, comp_type:SubComponentType, c:Component<T>) -> Weak<Component<T>> {
         let entity_id = c.entity_id();
         let c = Rc::new(c);
         let weakc = Rc::downgrade(&c);
@@ -78,23 +81,4 @@ impl<T> System<T> where T:SubComponent {
 
         ret
     }
-}
-
-fn main() {
-
-    // let mut s = System{components:BTreeMap::new()};
-    //
-    // let b = Component::B(BComponent{});
-    // let b = s.add_component(1, b);
-    // let a = Component::A(AComponent{p:Arc::downgrade(&b)});
-
-//    s.components.insert(1,Vec::new());
-
-    // let mut a = Arc::new(AComponent{});
-
-    // let ma = Arc::get_mut(&mut a).unwrap();
-    // let ma2 = Arc::get_mut(&a).unwrap();
-
-    // let b = Arc::downgrade(&a);
-
 }
