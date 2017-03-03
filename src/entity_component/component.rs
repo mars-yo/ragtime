@@ -16,7 +16,7 @@ pub struct Component<T:SubComponent> {
 impl<T> Component<T> where T:SubComponent {
 
     pub fn new(id:EntityID, sub:T) -> Self {
-        Self {
+        Component::<T> {
             entity_id:id,
             first_call:false,
             sub_component:sub,

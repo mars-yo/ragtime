@@ -6,7 +6,7 @@ use entity_component::component::*;
 use entity_component::entity::EntityID;
 use entity_component::entity::Entity;
 
-static next_entity_id : EntityID = 0;
+static mut next_entity_id : EntityID = 0;
 
 fn generate_entity_id() -> EntityID {
     if next_entity_id == i32::max_value() {
@@ -56,14 +56,12 @@ impl<T> System<T> where T:SubComponent {
 
         // add entity
         if ! self.entities.contains_key(&entity_id) {
-            let m = Entity::<T>::new(entity_id);
+            let mut m = Entity::<T>::new(entity_id);
+            m.add_component(order,weakc);
             self.entities.insert(entity_id, m);
         }
-        let ent = self.entities.get_mut(&entity_id).unwrap();
-        if ent.contains_key(&order) {
-            panic!("entity id {} already includes update order {}", entity_id, order);
-        }
-        ent.insert(order, weakc);
+        // let ent = self.entities.get_mut(&entity_id).unwrap();
+        // ent.insert(order, weakc);
 
         ret
     }

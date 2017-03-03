@@ -11,7 +11,7 @@ pub struct Entity<T> where T:SubComponent {
 
 impl<T> Entity<T> where T:SubComponent {
     pub fn new(id:EntityID) -> Self {
-        Self {
+        Entity::<T> {
             id:id,
             components:HashMap::new(),
         }
@@ -19,7 +19,8 @@ impl<T> Entity<T> where T:SubComponent {
     pub fn id(&self) -> EntityID {
         self.id
     }
-    pub fn add_component<'a>(&'a mut self, order:UpdateOrder, c:Component<T>) -> &'a mut Self {
-
+    pub fn add_component<'a>(&'a mut self, order:UpdateOrder, c:Weak<Component<T>>) -> &'a mut Self {
+        self.components.insert(order,c);
+        self
     }
 }
