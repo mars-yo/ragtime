@@ -1,38 +1,12 @@
-use super::entity_component::{Component,SubComponent};
-use std::rc::Weak;
+use entity_component::component::*;
+use entity_component::entity::*;
+use entity_component::system::*;
 
-enum SubComponents {
-    A(AComponent),
-    B(BComponent),
-}
-
-impl SubComponent for SubComponents {
-    fn update(&mut self) {
-        match *self {
-            SubComponents::A(ref mut c) => {
-                c.update();
-            },
-            SubComponents::B(ref mut c) => {
-                c.update();
-            }
-        }
-    }
-    fn start(&mut self) {
-        match *self {
-            SubComponents::A(ref mut c) => {
-                c.start();
-            },
-            SubComponents::B(ref mut c) => {
-                c.start();
-            }
-        }
-    }
-}
-
-struct BComponent {
+enum Sample1Components {
 
 }
-impl SubComponent for BComponent {
+
+impl SubComponent for Sample1Components {
     fn start(&mut self) {
 
     }
@@ -40,22 +14,14 @@ impl SubComponent for BComponent {
 
     }
 }
-impl BComponent {
-    fn pos(&self) ->(f32,f32) {
-        (0.0,0.0)
-    }
+
+struct Sample1Game {
+    system:System<Sample1Components>,
 }
 
-struct AComponent {
-    p:Weak<Component<BComponent>>
-}
+pub fn sample1_start() {
+    //make game AsMut
+    //add connection manager
+    //add game object manager
 
-impl SubComponent for AComponent {
-    fn start(&mut self) {
-
-    }
-    fn update(&mut self) {
-        let p = self.p.upgrade().unwrap();
-        let ps = p.sub_component().pos();
-    }
 }
