@@ -6,18 +6,8 @@ use entity_component::component::*;
 use entity_component::entity::EntityID;
 use entity_component::entity::Entity;
 
-static mut next_entity_id : EntityID = 0;
-
-fn generate_entity_id() -> EntityID {
-    if next_entity_id == i32::max_value() {
-        panic!("entity id max");
-    }
-    let id = next_entity_id;
-    next_entity_id += 1;
-    id
-}
-
 pub struct System<T:SubComponent> {
+    next_entity_id:i32,
     components:BTreeMap<UpdateOrder,Vec<Rc<Component<T>>>>,
     entities:HashMap<EntityID,Entity<T>>,
 }
@@ -26,9 +16,19 @@ impl<T> System<T> where T:SubComponent {
 
     pub fn new() -> System<T> {
         System::<T> {
+            next_entity_id:0,
             components:BTreeMap::new(),
             entities:HashMap::new(),
         }
+    }
+
+    pub fn generate_entity_id(&mut self) -> EntityID {
+        if self.next_entity_id == i32::max_value() {
+            panic!("entity id max");
+        }
+        let id = self.next_entity_id;
+        self.next_entity_id += 1;
+        id
     }
 
     pub fn update(&mut self) {

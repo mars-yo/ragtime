@@ -1,5 +1,6 @@
 
 mod entity_component;
+mod sub_component;
 mod sample1;
 
 

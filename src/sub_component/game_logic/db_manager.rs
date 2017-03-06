@@ -1,7 +1,7 @@
 
 use entity_component::component::*;
 
-struct DBManager {
+pub struct DBManager {
 
 }
 
@@ -10,6 +10,6 @@ impl SubComponent for DBManager {
 
     }
     fn update(&mut self) {
-        
+
     }
 }
