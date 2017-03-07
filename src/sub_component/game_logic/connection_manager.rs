@@ -1,46 +1,58 @@
 use std::net::TcpListener;
 use std::net::TcpStream;
 use std::collections::HashMap;
-use std::sync::mpsc::{Sender,Receiver};
+use std::sync::mpsc::{Sender,Receiver,channel};
+use std::thread;
+use std::net::ToSocketAddrs;
+use std::net::SocketAddr;
 
 use entity_component::component::*;
 
+type ConnectionID = i32;
+
 pub struct ConnectionManager {
     //ゲームロジック側でSenderを持つのがよいかも
+    local_addr:String,
     channel:(Sender<TcpStream>,Receiver<TcpStream>),
-    connections:HashMap<i32,TcpStream>,
+    connections:HashMap<ConnectionID,TcpStream>,
 }
 
 impl ConnectionManager {
-    pub fn new() {
-
+    pub fn new(addr:String) -> ConnectionManager {
+        ConnectionManager {
+            local_addr:addr,
+            channel:channel(),
+            connections:HashMap::new(),
+        }
     }
-    pub fn send(&mut self, conn_id:i32) {
+    pub fn send(&mut self, conn_id:ConnectionID) {
 
     }
 }
 impl SubComponent for ConnectionManager {
     fn start(&mut self) {
 
-        //待ち受けスレッドにする
-        match TcpListener::bind("127.0.0.1:53000") {
+        match TcpListener::bind(self.local_addr.as_str()) {
             Ok(listener) => {
-                for stream in listener.incoming() {
-                    match stream {
-                        Ok(stream) => {
-                            if let Ok(str) = stream.try_clone() {
-                                self.channel.0.send(str);
-                                break;
-                            }
-                            else {
-                                break;
-                            }
-                        },
-                        Err(e) => {
+                let tx = self.channel.0.clone();
+                thread::spawn(move|| {
+                    for stream in listener.incoming() {
+                        match stream {
+                            Ok(stream) => {
+                                if let Ok(str) = stream.try_clone() {
+                                    tx.send(str);
+                                    break;
+                                }
+                                else {
+                                    break;
+                                }
+                            },
+                            Err(e) => {
 
+                            }
                         }
                     }
-                }
+                });
             },
             Err(e) => {
                 println!("{}", e);
@@ -50,15 +62,20 @@ impl SubComponent for ConnectionManager {
     }
 
     fn update(&mut self) {
-        //別スレッドで各コネクションからくるメッセージを受信
         //送信用チャンネルからデータをとって送信
-        let stream = self.channel.1.recv().unwrap();
-        for id in 0..i32::max_value() {
-            if !self.connections.contains_key(&id) {
-                self.connections.insert(id, stream.try_clone().unwrap());
+        match self.channel.1.try_recv() {
+            Ok(stream) => {
+                for id in 0..i32::max_value() {
+                    if !self.connections.contains_key(&id) {
+                        self.connections.insert(id, stream.try_clone().unwrap());
+                    }
+                }
+                panic!("connection max");
+            },
+            Err(e) => {
+                //err
             }
         }
-        panic!("connection max");
     }
 
 }
