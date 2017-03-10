@@ -2,6 +2,7 @@ use std::net::TcpListener;
 use std::net::TcpStream;
 use std::collections::{HashMap,VecDeque};
 use std::sync::mpsc::{Sender,Receiver,channel};
+use std::sync::Arc;
 use std::thread;
 use std::net::ToSocketAddrs;
 use std::net::SocketAddr;
@@ -15,9 +16,7 @@ enum EventCtoS {
 }
 
 enum EventStoC {
-    SendAll(Vec<u8>),
-    SendTo((ConnectionID,Vec<u8>)),
-    SendExcept((ConnectionID,Vec<u8>)),
+    SendTo((TcpStream,Vec<u8>)),
 }
 
 pub struct ConnectionManager {
@@ -39,7 +38,9 @@ impl ConnectionManager {
         }
     }
     pub fn send_to(&mut self, conn_id:ConnectionID, data:Vec<u8>) {
-        self.stoc_channel_tx.send(EventStoC::SendTo((conn_id,data)));
+        if let Some(conn) = self.connections.get(&conn_id) {
+            self.stoc_channel_tx.send(EventStoC::SendTo((conn.try_clone().unwrap(),data)));
+        }
     }
 
     fn start_listener(&mut self) {
@@ -76,14 +77,8 @@ impl ConnectionManager {
         thread::spawn(move|| {
             loop {
                 match rx.recv().unwrap() {
-                    EventStoC::SendAll(data) => {
-
-                    },
-                    EventStoC::SendExcept((conn_id,data)) => {
-
-                    },
-                    EventStoC::SendTo((conn_id,data)) => {
-
+                    EventStoC::SendTo((mut stream,data)) => {
+                        stream.write_all(data.as_slice());
                     }
                 }
             }
