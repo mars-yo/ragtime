@@ -93,9 +93,9 @@ impl ConnectionManager {
 impl SubComponent for ConnectionManager {
     fn start(&mut self) {
         self.start_listener();
-        let chan = channel();
-        self.stoc_channel_tx = chan.0;
-        self.start_stoc_event_processor(chan.1);
+        let (tx,rx) = channel();
+        self.stoc_channel_tx = tx;
+        self.start_stoc_event_processor(rx);
     }
 
     fn update(&mut self) {
