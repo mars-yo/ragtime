@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::thread;
 use std::net::ToSocketAddrs;
 use std::net::SocketAddr;
-use std::io::Write;
+use std::io::{Write,Read};
 use entity_component::component::*;
 
 type ConnectionID = i32;
@@ -39,7 +39,7 @@ impl ConnectionManager {
     }
     pub fn send_to(&mut self, conn_id:ConnectionID, data:Vec<u8>) {
         if let Some(conn) = self.connections.get(&conn_id) {
-            self.stoc_channel_tx.send(EventStoC::SendTo((conn.try_clone().unwrap(),data)));
+            self.stoc_channel_tx.send(EventStoC::SendTo((conn.try_clone().expect("error send"),data)));
         }
     }
 
@@ -52,16 +52,11 @@ impl ConnectionManager {
                     for stream in listener.incoming() {
                         match stream {
                             Ok(stream) => {
-                                if let Ok(str) = stream.try_clone() {
-                                    tx.send(EventCtoS::Accept(str));
-                                    break;
-                                }
-                                else {
-                                    break;
-                                }
+                                stream.set_nonblocking(true);
+                                tx.send(EventCtoS::Accept(stream));
                             },
                             Err(e) => {
-
+                                println!("{}", e);
                             }
                         }
                     }
@@ -76,9 +71,12 @@ impl ConnectionManager {
     fn start_stoc_event_processor(&mut self, rx:Receiver<EventStoC>) {
         thread::spawn(move|| {
             loop {
-                match rx.recv().unwrap() {
-                    EventStoC::SendTo((mut stream,data)) => {
+                match rx.recv() {
+                    Ok(EventStoC::SendTo((mut stream,data))) => {
                         stream.write_all(data.as_slice());
+                    },
+                    Err(e) => {
+
                     }
                 }
             }
@@ -98,14 +96,21 @@ impl SubComponent for ConnectionManager {
             Ok(EventCtoS::Accept(stream)) => {
                 for id in 0..i32::max_value() {
                     if !self.connections.contains_key(&id) {
-                        self.connections.insert(id, stream.try_clone().unwrap());
+                        self.connections.insert(id, stream);
+                        break;
                     }
                 }
-                panic!("connection max");
+//                panic!("connection max");
             },
             Err(e) => {
 
             }
+        }
+
+        for (conn_id, stream) in self.connections.iter_mut() {
+            let mut header:[u8;1] = [0;1];
+            stream.read_exact(&mut header);
+            println!("read {:?}", header);
         }
 
         // for each connection recv data
