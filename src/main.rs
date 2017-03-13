@@ -22,6 +22,9 @@ fn test() {
     conn_manager.start();
     loop {
         println!("loop");
+        let mut data:Vec<u8> = Vec::new();
+        data.push(1u8);
+        conn_manager.send_to(0, data);
         conn_manager.update();
         thread::sleep(time::Duration::from_secs(1));
     }
