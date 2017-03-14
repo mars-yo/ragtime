@@ -21,9 +21,8 @@ fn test() {
     let mut conn_manager = sub_component::game_logic::connection_manager::ConnectionManager::new("0.0.0.0:53000".to_string());
     conn_manager.start();
     loop {
-        println!("loop");
         let mut data:Vec<u8> = Vec::new();
-        data.push(1u8);
+        data.push(65u8);
         conn_manager.send_to(0, data);
         conn_manager.update();
         thread::sleep(time::Duration::from_secs(1));

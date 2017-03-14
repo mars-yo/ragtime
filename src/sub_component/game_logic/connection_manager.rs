@@ -72,11 +72,12 @@ impl ConnectionManager {
         thread::spawn(move|| {
             loop {
                 match rx.recv() {
+                    Err(e) => println!("error {} {} {}", file!(), line!(), e),
                     Ok(EventStoC::SendTo((mut stream,data))) => {
-                        stream.write_all(data.as_slice());
-                    },
-                    Err(e) => {
-
+                        match stream.write_all(data.as_slice()) {
+                            Err(e) => println!("error {}", e),
+                            Ok(_) => {}
+                        }
                     }
                 }
             }
@@ -93,23 +94,30 @@ impl SubComponent for ConnectionManager {
 
     fn update(&mut self) {
         match self.ctos_channel_rx.try_recv() {
+            Err(e) => {},//println!("error {} {} {}", file!(), line!(), e),
             Ok(EventCtoS::Accept(stream)) => {
                 for id in 0..i32::max_value() {
                     if !self.connections.contains_key(&id) {
+                        println!("new connection {}", id);
                         self.connections.insert(id, stream);
                         break;
                     }
                 }
 //                panic!("connection max");
-            },
-            Err(e) => {
-
             }
         }
 
         for (conn_id, stream) in self.connections.iter_mut() {
+
+            if let Ok(Some(e)) = stream.take_error() {
+                println!("error on socket {}", e);
+            }
+
             let mut header:[u8;1] = [0;1];
-            stream.read_exact(&mut header);
+            match stream.read_exact(&mut header) {
+                Err(e) => println!("error {} {} {}", file!(), line!(), e),
+                _ => {}
+            }
             println!("read {:?}", header);
         }
 
