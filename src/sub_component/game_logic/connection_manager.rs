@@ -49,48 +49,53 @@ impl Connection {
             recv_header:DataHeader::new(),
         }
     }
-    fn recv(&mut self) {
-
-
-        let mut raw:[u8;4] = [0;4];
-        let mut consumed = false;
-        match self.recv_buffer.fill_buf() {
-            Err(e) => println!("error {} {} {}", file!(), line!(), e),
-            Ok(data) => {
-                println!("data len {}", data.len());
-                if data.len() >= 4 {
-                    for i in 0..4 {
-                        raw[i] = *data.get(i).unwrap();
-                    }
-                    consumed = true;
-                }
-            }
-        }
-        if consumed {
-            self.recv_header.body_len = BigEndian::read_i32(&raw[..]);
-            self.recv_buffer.consume(4);
-            println!("read {}", self.recv_header.body_len);
-        }
+    fn recv(&mut self) -> String {
+        let mut msg:String = "".to_string();
+        self.recv_buffer.read_line(&mut msg);
+        msg
+        // let mut raw:[u8;4] = [0;4];
+        // let mut consumed = false;
+        // match self.recv_buffer.fill_buf() {
+        //     Err(e) => println!("error {} {} {}", file!(), line!(), e),
+        //     Ok(data) => {
+        //         println!("data len {}", data.len());
+        //         if data.len() >= 4 {
+        //             for i in 0..4 {
+        //                 raw[i] = *data.get(i).unwrap();
+        //             }
+        //             consumed = true;
+        //         }
+        //     }
+        // }
+        // if consumed {
+        //     self.recv_header.body_len = BigEndian::read_i32(&raw[..]);
+        //     self.recv_buffer.consume(4);
+        //     println!("read {}", self.recv_header.body_len);
+        // }
     }
     fn send(&mut self, data:&[u8]) {
         self.send_stream.write_all(data);
     }
 }
 
+type MsgHandler = fn(ConnectionID, String);
+
 pub struct ConnectionManager {
     next_conn_id:ConnectionID,
     listener:TcpListener,
     connections:HashMap<ConnectionID, Connection>,
+    msg_handler:MsgHandler,
 }
 
 impl ConnectionManager {
-    pub fn new(addr:String) -> ConnectionManager {
+    pub fn new(addr:String, handler:MsgHandler) -> ConnectionManager {
         let listener = TcpListener::bind(addr.as_str()).expect("listener bind error");
         listener.set_nonblocking(true).expect("listener can not set nonblocking");
         ConnectionManager {
             next_conn_id:0,
             listener:listener,
             connections:HashMap::new(),
+            msg_handler:handler,
         }
     }
     pub fn send_to(&mut self, conn_id:ConnectionID, data:Vec<u8>) {
@@ -124,8 +129,8 @@ impl SubComponent for ConnectionManager {
             // if let Ok(Some(e)) = stream.take_error() {
             //     println!("error on socket {}", e);
             // }
-            conn.recv();
-
+            let msg = conn.recv();
+            (self.msg_handler)(*conn_id, msg);
         }
 
         // for each connection recv data

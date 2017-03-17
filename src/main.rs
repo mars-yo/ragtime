@@ -12,13 +12,13 @@ mod sample1;
 //connection_managerはゲーム、ルーム共通にしたい
 
 fn main() {
-    let mut conn_manager = sub_component::game_logic::connection_manager::ConnectionManager::new("127.0.0.1:53000".to_string());
+//    let mut conn_manager = sub_component::game_logic::connection_manager::ConnectionManager::new("127.0.0.1:53000".to_string());
 
 }
 
 #[test]
 fn test() {
-    let mut conn_manager = sub_component::game_logic::connection_manager::ConnectionManager::new("0.0.0.0:53000".to_string());
+    let mut conn_manager = sub_component::game_logic::connection_manager::ConnectionManager::new("0.0.0.0:53000".to_string(), |id:i32,msg:String|{println!("recv---{}",msg);});
     conn_manager.start();
     loop {
         let mut data:Vec<u8> = Vec::new();
