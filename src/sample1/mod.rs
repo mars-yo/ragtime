@@ -39,6 +39,7 @@ struct Sample1Game {
 }
 
 pub fn sample1_start() {
+    let system = Sample1Game{system:System::<GameLogicComponents>::new()};
     //make game AsMut
     //add connection manager
     //add game object manager

@@ -1,5 +1,6 @@
 use std::rc::Rc;
 use std::rc::Weak;
+use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use entity_component::component::*;
@@ -8,7 +9,7 @@ use entity_component::entity::Entity;
 
 pub struct System<T:SubComponent> {
     next_entity_id:i32,
-    components:BTreeMap<UpdateOrder,Vec<Rc<Component<T>>>>,
+    components:BTreeMap<UpdateOrder,Vec<Rc<RefCell<Component<T>>>>>,
     entities:HashMap<EntityID,Entity<T>>,
 }
 
@@ -31,19 +32,21 @@ impl<T> System<T> where T:SubComponent {
         id
     }
 
-    pub fn update(&mut self) {
-        for (_,comps) in self.components.iter_mut() {
-            for c in comps.iter_mut() {
-                if let Some(c) = Rc::get_mut(c) {
+    pub fn update(&self) {
+        for (_,comps) in self.components.iter() {
+            for c in comps.iter() {
+                if let Ok(ref mut c) = c.try_borrow_mut() {
                     c.update();
+                } else {
+                    println!("can not borrow mut");
                 }
             }
         }
     }
 
-    pub fn add_component(&mut self, order:UpdateOrder, c:Component<T>) -> Weak<Component<T>> {
+    pub fn add_component(&mut self, order:UpdateOrder, c:Component<T>) -> Weak<RefCell<Component<T>>> {
         let entity_id = c.entity_id();
-        let c = Rc::new(c);
+        let c = Rc::new(RefCell::new(c));
         let weakc = Rc::downgrade(&c);
         let ret = Rc::downgrade(&c);
 

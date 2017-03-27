@@ -12,7 +12,7 @@ use std::io::{Write,Read,BufReader,BufRead};
 use self::byteorder::{BigEndian,ByteOrder};
 use entity_component::component::*;
 
-type ConnectionID = u32;
+pub type ConnectionID = u32;
 
 enum EventCtoS {
     Accept(TcpStream),
