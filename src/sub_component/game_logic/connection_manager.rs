@@ -4,7 +4,8 @@ use std::net::TcpListener;
 use std::net::TcpStream;
 use std::collections::{HashMap,VecDeque};
 use std::sync::mpsc::{Sender,Receiver,channel};
-use std::sync::Arc;
+use std::rc::{Weak,Rc};
+use std::cell::RefCell;
 use std::thread;
 use std::net::ToSocketAddrs;
 use std::net::SocketAddr;
@@ -14,45 +15,33 @@ use entity_component::component::*;
 
 pub type ConnectionID = u32;
 
-enum EventCtoS {
-    Accept(TcpStream),
+pub trait Message {
+    fn new<T:Message>() -> T;
+    fn read_from<T:BufRead>(&mut self, reader:&mut T) -> bool;
+}
+pub trait HandleMessage<T:Message> {
+    fn on_message(&mut self, msg:&T);
 }
 
-enum EventStoC {
-    SendTo((TcpStream,Vec<u8>)),
-}
-
-struct DataHeader {
-    body_len:i32,
-}
-
-impl DataHeader {
-    fn new() -> DataHeader {
-        DataHeader {
-            body_len:0,
-        }
-    }
-}
-
-struct Connection {
+struct Connection<T:Message> {
     send_stream:TcpStream,
     recv_buffer:BufReader<TcpStream>,
-    recv_header:DataHeader,
+    message:T,
+    message_handler:Weak<RefCell<HandleMessage<T>>>,
 }
 
-impl Connection {
-    fn new(stream:TcpStream) -> Connection {
+impl<T:Message> Connection<T> {
+    fn new(stream:TcpStream) -> Connection<T> {
         let buf = BufReader::with_capacity(1024, stream.try_clone().unwrap());
-        Connection {
+        Connection::<T> {
             send_stream:stream,
             recv_buffer:buf,
-            recv_header:DataHeader::new(),
+            message:T::new(),
+            message_handler:Weak::<RefCell<HandleMessage<T>>::new(),
         }
     }
-    fn recv(&mut self) -> String {
-        let mut msg:String = "".to_string();
-        self.recv_buffer.read_line(&mut msg);
-        msg
+    fn recv(&mut self) -> bool {
+        self.message.read_from(&mut self.recv_buffer)
         // let mut raw:[u8;4] = [0;4];
         // let mut consumed = false;
         // match self.recv_buffer.fill_buf() {
@@ -78,20 +67,19 @@ impl Connection {
     }
 }
 
-type MsgHandler = fn(ConnectionID, String);
 
-pub struct ConnectionManager {
+pub struct ConnectionManager<T:Message> {
     next_conn_id:ConnectionID,
     listener:TcpListener,
-    connections:HashMap<ConnectionID, Connection>,
-    msg_handler:MsgHandler,
+    connections:HashMap<ConnectionID, Connection<T>>,
+    msg_handler:Weak<RefCell<HandleMessage<T>>>,
 }
 
-impl ConnectionManager {
-    pub fn new(addr:String, handler:MsgHandler) -> ConnectionManager {
+impl<T:Message> ConnectionManager<T> {
+    pub fn new(addr:String) -> ConnectionManager<T> {
         let listener = TcpListener::bind(addr.as_str()).expect("listener bind error");
         listener.set_nonblocking(true).expect("listener can not set nonblocking");
-        ConnectionManager {
+        ConnectionManager<T> {
             next_conn_id:0,
             listener:listener,
             connections:HashMap::new(),
@@ -105,7 +93,7 @@ impl ConnectionManager {
     }
 }
 
-impl SubComponent for ConnectionManager {
+impl<T:Message> SubComponent for ConnectionManager<T> {
     fn start(&mut self) {
     }
 
@@ -129,8 +117,10 @@ impl SubComponent for ConnectionManager {
             // if let Ok(Some(e)) = stream.take_error() {
             //     println!("error on socket {}", e);
             // }
-            let msg = conn.recv();
-            (self.msg_handler)(*conn_id, msg);
+            let completed = conn.recv();
+            if completed {
+                (self.msg_handler)(*conn_id, &conn.message);
+            }
         }
 
         // for each connection recv data

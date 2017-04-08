@@ -5,9 +5,10 @@ use super::sub_component::game_logic::connection_manager::*;
 use super::sub_component::game_logic::db_manager::*;
 use super::sub_component::game_logic::game_object_manager::*;
 use super::sub_component::game_object::position::*;
+use super::string_message::StringMessage;
 
 enum GameLogicComponents {
-    ConnectionManagerSC(ConnectionManager),
+    ConnectionManagerSC(ConnectionManager<StringMessage>),
     DBManagerSC(DBManager),
     GameObjectManagerSC(GameObjectManager<GameObjectComponents>),
 }
