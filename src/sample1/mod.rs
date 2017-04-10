@@ -27,7 +27,7 @@ enum GameObjectComponents {
 }
 
 impl HandleMessage<StringMessage> for GameObjectComponents {
-    fn on_message(&mut self, msg:StringMessage ) {
+    fn on_message(&mut self, msg:&StringMessage ) {
 
     }
 }

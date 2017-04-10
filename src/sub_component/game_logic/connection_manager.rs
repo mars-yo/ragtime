@@ -20,7 +20,7 @@ pub trait Message {
     fn read_from<T:BufRead>(&mut self, reader:&mut T) -> bool;
 }
 pub trait HandleMessage<T:Message> {
-    fn on_message(&mut self, msg:T);
+    fn on_message(&mut self, msg:&T);
 }
 
 struct Connection<T:Message, U:HandleMessage<T>> {
@@ -40,9 +40,12 @@ impl<T:Message, U:HandleMessage<T>> Connection<T,U> {
             message_handler:Weak::new(),
         }
     }
-    fn recv(&mut self) -> bool {
-        true
-//        self.message.read_from(&mut self.recv_buffer)
+    fn recv(&mut self) {
+        if self.message.read_from(&mut self.recv_buffer) {
+            if let Some(handler) = self.message_handler.upgrade() {
+                handler.borrow_mut().on_message(&self.message);
+            }
+        }
         // let mut raw:[u8;4] = [0;4];
         // let mut consumed = false;
         // match self.recv_buffer.fill_buf() {
