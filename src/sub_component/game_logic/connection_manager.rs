@@ -16,32 +16,33 @@ use entity_component::component::*;
 pub type ConnectionID = u32;
 
 pub trait Message {
-    fn new<T:Message>() -> T;
+    fn new() -> Self;
     fn read_from<T:BufRead>(&mut self, reader:&mut T) -> bool;
 }
 pub trait HandleMessage<T:Message> {
-    fn on_message(&mut self, msg:&T);
+    fn on_message(&mut self, msg:T);
 }
 
-struct Connection<T:Message> {
+struct Connection<T:Message, U:HandleMessage<T>> {
     send_stream:TcpStream,
     recv_buffer:BufReader<TcpStream>,
     message:T,
-    message_handler:Weak<RefCell<HandleMessage<T>>>,
+    message_handler:Weak<RefCell<U>>,
 }
 
-impl<T:Message> Connection<T> {
-    fn new(stream:TcpStream) -> Connection<T> {
+impl<T:Message, U:HandleMessage<T>> Connection<T,U> {
+    fn new(stream:TcpStream) -> Connection<T,U> {
         let buf = BufReader::with_capacity(1024, stream.try_clone().unwrap());
-        Connection::<T> {
+        Connection::<T,U> {
             send_stream:stream,
             recv_buffer:buf,
-            message:T::new(),
-            message_handler:Weak::<RefCell<HandleMessage<T>>::new(),
+            message:Message::new(),
+            message_handler:Weak::new(),
         }
     }
     fn recv(&mut self) -> bool {
-        self.message.read_from(&mut self.recv_buffer)
+        true
+//        self.message.read_from(&mut self.recv_buffer)
         // let mut raw:[u8;4] = [0;4];
         // let mut consumed = false;
         // match self.recv_buffer.fill_buf() {
@@ -68,22 +69,20 @@ impl<T:Message> Connection<T> {
 }
 
 
-pub struct ConnectionManager<T:Message> {
+pub struct ConnectionManager<T:Message, U:HandleMessage<T>> {
     next_conn_id:ConnectionID,
     listener:TcpListener,
-    connections:HashMap<ConnectionID, Connection<T>>,
-    msg_handler:Weak<RefCell<HandleMessage<T>>>,
+    connections:HashMap<ConnectionID, Connection<T,U>>,
 }
 
-impl<T:Message> ConnectionManager<T> {
-    pub fn new(addr:String) -> ConnectionManager<T> {
+impl<T:Message, U:HandleMessage<T>> ConnectionManager<T,U> {
+    pub fn new(addr:String) -> ConnectionManager<T,U> {
         let listener = TcpListener::bind(addr.as_str()).expect("listener bind error");
         listener.set_nonblocking(true).expect("listener can not set nonblocking");
-        ConnectionManager<T> {
+        ConnectionManager::<T,U> {
             next_conn_id:0,
             listener:listener,
             connections:HashMap::new(),
-            msg_handler:handler,
         }
     }
     pub fn send_to(&mut self, conn_id:ConnectionID, data:Vec<u8>) {
@@ -93,7 +92,7 @@ impl<T:Message> ConnectionManager<T> {
     }
 }
 
-impl<T:Message> SubComponent for ConnectionManager<T> {
+impl<T:Message,U:HandleMessage<T>> SubComponent for ConnectionManager<T,U> {
     fn start(&mut self) {
     }
 
@@ -117,10 +116,10 @@ impl<T:Message> SubComponent for ConnectionManager<T> {
             // if let Ok(Some(e)) = stream.take_error() {
             //     println!("error on socket {}", e);
             // }
-            let completed = conn.recv();
-            if completed {
-                (self.msg_handler)(*conn_id, &conn.message);
-            }
+            // let completed = conn.recv();
+            // if completed {
+            //     (self.msg_handler)(*conn_id, &conn.message);
+            // }
         }
 
         // for each connection recv data

@@ -6,7 +6,7 @@ pub struct StringMessage {
 }
 
 impl Message for StringMessage {
-    fn new<StringMessage>() -> StringMessage {
+    fn new() -> StringMessage {
         StringMessage {
             body:"".to_string(),
         }

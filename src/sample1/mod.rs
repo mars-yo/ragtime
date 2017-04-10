@@ -8,7 +8,7 @@ use super::sub_component::game_object::position::*;
 use super::string_message::StringMessage;
 
 enum GameLogicComponents {
-    ConnectionManagerSC(ConnectionManager<StringMessage>),
+    ConnectionManagerSC(ConnectionManager<StringMessage, GameObjectComponents>),
     DBManagerSC(DBManager),
     GameObjectManagerSC(GameObjectManager<GameObjectComponents>),
 }
@@ -24,6 +24,12 @@ impl SubComponent for GameLogicComponents {
 
 enum GameObjectComponents {
     PositionSC(Position),
+}
+
+impl HandleMessage<StringMessage> for GameObjectComponents {
+    fn on_message(&mut self, msg:StringMessage ) {
+
+    }
 }
 
 impl SubComponent for GameObjectComponents {
