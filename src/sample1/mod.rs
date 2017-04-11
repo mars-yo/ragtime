@@ -46,7 +46,10 @@ struct Sample1Game {
 }
 
 pub fn sample1_start() {
-    let system = Sample1Game{system:System::<GameLogicComponents>::new()};
+    let mut system = Sample1Game{system:System::<GameLogicComponents>::new()};
+    let conn = GameLogicComponents::ConnectionManagerSC(ConnectionManager::<StringMessage,GameObjectComponents>::new("127.0.0.1:8080".to_string()));
+    let conn = Component::new( system.system.generate_entity_id(), conn);
+
     //make game AsMut
     //add connection manager
     //add game object manager

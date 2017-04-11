@@ -46,28 +46,12 @@ impl<T:Message, U:HandleMessage<T>> Connection<T,U> {
                 handler.borrow_mut().on_message(&self.message);
             }
         }
-        // let mut raw:[u8;4] = [0;4];
-        // let mut consumed = false;
-        // match self.recv_buffer.fill_buf() {
-        //     Err(e) => println!("error {} {} {}", file!(), line!(), e),
-        //     Ok(data) => {
-        //         println!("data len {}", data.len());
-        //         if data.len() >= 4 {
-        //             for i in 0..4 {
-        //                 raw[i] = *data.get(i).unwrap();
-        //             }
-        //             consumed = true;
-        //         }
-        //     }
-        // }
-        // if consumed {
-        //     self.recv_header.body_len = BigEndian::read_i32(&raw[..]);
-        //     self.recv_buffer.consume(4);
-        //     println!("read {}", self.recv_header.body_len);
-        // }
     }
     fn send(&mut self, data:&[u8]) {
         self.send_stream.write_all(data);
+    }
+    fn set_message_handler(&mut self, handler:Weak<RefCell<U>>) {
+        self.message_handler = handler;
     }
 }
 
@@ -93,6 +77,11 @@ impl<T:Message, U:HandleMessage<T>> ConnectionManager<T,U> {
             val.send(data.as_slice());
         }
     }
+    pub fn set_message_handler(&mut self, conn_id:ConnectionID, handler:Weak<RefCell<U>>) {
+        if let Some(val) = self.connections.get_mut(&conn_id) {
+            val.set_message_handler(handler);
+        }
+    }
 }
 
 impl<T:Message,U:HandleMessage<T>> SubComponent for ConnectionManager<T,U> {
@@ -113,18 +102,7 @@ impl<T:Message,U:HandleMessage<T>> SubComponent for ConnectionManager<T,U> {
         }
 
         for (conn_id, conn) in self.connections.iter_mut() {
-
-            // let ref mut stream = str_buf.0;
-            // let ref mut buffer = str_buf.1;
-            // if let Ok(Some(e)) = stream.take_error() {
-            //     println!("error on socket {}", e);
-            // }
-            // let completed = conn.recv();
-            // if completed {
-            //     (self.msg_handler)(*conn_id, &conn.message);
-            // }
+            conn.recv();
         }
-
-        // for each connection recv data
     }
 }
