@@ -1,19 +1,21 @@
 use entity_component::component::*;
 use entity_component::entity::*;
 use entity_component::system::*;
+use sample1::sub_component::position::*;
 use super::sub_component::game_logic::connection_manager::*;
 use super::sub_component::game_logic::db_manager::*;
 use super::sub_component::game_logic::game_object_manager::*;
-use super::sub_component::game_object::position::*;
 use super::string_message::StringMessage;
 
-enum GameLogicComponents {
-    ConnectionManagerSC(ConnectionManager<StringMessage, GameObjectComponents>),
-    DBManagerSC(DBManager),
-    GameObjectManagerSC(GameObjectManager<GameObjectComponents>),
+mod sub_component;
+
+enum GameLogicComponent {
+    ConnectionManager(ConnectionManager<StringMessage, GameObjectComponent>),
+    DBManager(DBManager),
+    GameObjectManager(GameObjectManager<GameObjectComponent>),
 }
 
-impl SubComponent for GameLogicComponents {
+impl SubComponent for GameLogicComponent {
     fn start(&mut self) {
 
     }
@@ -22,17 +24,17 @@ impl SubComponent for GameLogicComponents {
     }
 }
 
-enum GameObjectComponents {
-    PositionSC(Position),
+enum GameObjectComponent {
+    Position(Position),
 }
 
-impl HandleMessage<StringMessage> for GameObjectComponents {
-    fn on_message(&mut self, msg:&StringMessage ) {
+impl MessageHandler<StringMessage> for GameObjectComponent {
+    fn on_message(&mut self, id:ConnectionID, msg:&StringMessage ) {
 
     }
 }
 
-impl SubComponent for GameObjectComponents {
+impl SubComponent for GameObjectComponent {
     fn start(&mut self) {
 
     }
@@ -42,13 +44,14 @@ impl SubComponent for GameObjectComponents {
 }
 
 struct Sample1Game {
-    system:System<GameLogicComponents>,
+    system:System<GameLogicComponent>,
 }
 
 pub fn sample1_start() {
-    let mut system = Sample1Game{system:System::<GameLogicComponents>::new()};
-    let conn = GameLogicComponents::ConnectionManagerSC(ConnectionManager::<StringMessage,GameObjectComponents>::new("127.0.0.1:8080".to_string()));
+    let mut system = Sample1Game{system:System::<GameLogicComponent>::new()};
+    let conn = GameLogicComponent::ConnectionManager(ConnectionManager::<StringMessage,GameObjectComponent>::new("127.0.0.1:8080".to_string()));
     let conn = Component::new( system.system.generate_entity_id(), conn);
+
 
     //make game AsMut
     //add connection manager

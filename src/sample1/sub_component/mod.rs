@@ -1,3 +1,7 @@
+pub mod input;
+pub mod position;
+pub mod receptor;
+
 // use entity_component::*;
 // use self::position::Position;
 // use self::connection_manager::ConnectionManager;

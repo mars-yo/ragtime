@@ -19,21 +19,23 @@ pub trait Message {
     fn new() -> Self;
     fn read_from<T:BufRead>(&mut self, reader:&mut T) -> bool;
 }
-pub trait HandleMessage<T:Message> {
-    fn on_message(&mut self, msg:&T);
+pub trait MessageHandler<T:Message> {
+    fn on_message(&mut self, id:ConnectionID, msg:&T);
 }
 
-struct Connection<T:Message, U:HandleMessage<T>> {
+struct Connection<T:Message, U:MessageHandler<T>> {
+    id:ConnectionID,
     send_stream:TcpStream,
     recv_buffer:BufReader<TcpStream>,
     message:T,
     message_handler:Weak<RefCell<U>>,
 }
 
-impl<T:Message, U:HandleMessage<T>> Connection<T,U> {
-    fn new(stream:TcpStream) -> Connection<T,U> {
+impl<T:Message, U:MessageHandler<T>> Connection<T,U> {
+    fn new(id:ConnectionID, stream:TcpStream) -> Connection<T,U> {
         let buf = BufReader::with_capacity(1024, stream.try_clone().unwrap());
         Connection::<T,U> {
+            id:id,
             send_stream:stream,
             recv_buffer:buf,
             message:Message::new(),
@@ -43,7 +45,7 @@ impl<T:Message, U:HandleMessage<T>> Connection<T,U> {
     fn recv(&mut self) {
         if self.message.read_from(&mut self.recv_buffer) {
             if let Some(handler) = self.message_handler.upgrade() {
-                handler.borrow_mut().on_message(&self.message);
+                handler.borrow_mut().on_message(self.id, &self.message);
             }
         }
     }
@@ -56,13 +58,14 @@ impl<T:Message, U:HandleMessage<T>> Connection<T,U> {
 }
 
 
-pub struct ConnectionManager<T:Message, U:HandleMessage<T>> {
+pub struct ConnectionManager<T:Message, U:MessageHandler<T>> {
     next_conn_id:ConnectionID,
     listener:TcpListener,
     connections:HashMap<ConnectionID, Connection<T,U>>,
+    default_message_handler:Weak<RefCell<U>>,
 }
 
-impl<T:Message, U:HandleMessage<T>> ConnectionManager<T,U> {
+impl<T:Message, U:MessageHandler<T>> ConnectionManager<T,U> {
     pub fn new(addr:String) -> ConnectionManager<T,U> {
         let listener = TcpListener::bind(addr.as_str()).expect("listener bind error");
         listener.set_nonblocking(true).expect("listener can not set nonblocking");
@@ -70,6 +73,7 @@ impl<T:Message, U:HandleMessage<T>> ConnectionManager<T,U> {
             next_conn_id:0,
             listener:listener,
             connections:HashMap::new(),
+            default_message_handler:Weak::new(),
         }
     }
     pub fn send_to(&mut self, conn_id:ConnectionID, data:Vec<u8>) {
@@ -84,7 +88,7 @@ impl<T:Message, U:HandleMessage<T>> ConnectionManager<T,U> {
     }
 }
 
-impl<T:Message,U:HandleMessage<T>> SubComponent for ConnectionManager<T,U> {
+impl<T:Message,U:MessageHandler<T>> SubComponent for ConnectionManager<T,U> {
     fn start(&mut self) {
     }
 
@@ -92,7 +96,9 @@ impl<T:Message,U:HandleMessage<T>> SubComponent for ConnectionManager<T,U> {
         match self.listener.accept() {
             Ok((stream, addr)) => {
                 stream.set_nonblocking(true);
-                self.connections.insert(self.next_conn_id, Connection::new(stream));
+                let mut conn = Connection::new(self.next_conn_id, stream);
+                conn.set_message_handler(self.default_message_handler.clone());
+                self.connections.insert(self.next_conn_id, conn);
                 println!("new connection {} {}", self.next_conn_id, addr);
                 self.next_conn_id += 1;
             },
