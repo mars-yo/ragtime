@@ -3,7 +3,7 @@ extern crate log;
 
 use entity_component::component::SubComponent;
 use std::{thread, time};
-use std::rc::{Rc,Weak};
+use std::rc::{Rc, Weak};
 use std::cell::RefCell;
 
 #[macro_use]
@@ -15,7 +15,7 @@ mod string_message;
 //connection_managerはゲーム、ルーム共通にしたい
 
 fn main() {
-//    let mut conn_manager = sub_component::game_logic::connection_manager::ConnectionManager::new("127.0.0.1:53000".to_string());
+    //    let mut conn_manager = sub_component::game_logic::connection_manager::ConnectionManager::new("127.0.0.1:53000".to_string());
     sample1::sample1_start();
 }
 

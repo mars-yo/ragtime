@@ -27,19 +27,20 @@ pub trait SubComponent {
     fn update(&mut self);
 }
 
-pub struct Component<T:SubComponent> {
-    entity_id:EntityID,
-    first_call:bool,
-    sub_component:T,
+pub struct Component<T: SubComponent> {
+    entity_id: EntityID,
+    first_call: bool,
+    sub_component: T,
 }
 
-impl<T> Component<T> where T:SubComponent {
-
-    pub fn new(id:EntityID, sub:T) -> Self {
+impl<T> Component<T>
+    where T: SubComponent
+{
+    pub fn new(id: EntityID, sub: T) -> Self {
         Component::<T> {
-            entity_id:id,
-            first_call:false,
-            sub_component:sub,
+            entity_id: id,
+            first_call: false,
+            sub_component: sub,
         }
     }
 

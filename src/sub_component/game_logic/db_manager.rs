@@ -1,15 +1,9 @@
 
 use entity_component::component::*;
 
-pub struct DBManager {
-
-}
+pub struct DBManager {}
 
 impl SubComponent for DBManager {
-    fn start(&mut self) {
-
-    }
-    fn update(&mut self) {
-
-    }
+    fn start(&mut self) {}
+    fn update(&mut self) {}
 }
