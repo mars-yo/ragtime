@@ -1,5 +1,25 @@
 use entity_component::entity::EntityID;
 
+macro_rules! declare_component {
+    ($e:ident, $($c:ident),+) => {
+        enum $e {
+            $( $c($c), )+
+        }
+        impl SubComponent for $e {
+            fn start(&mut self) {
+                match *self {
+                    $( $e::$c(ref mut cmp) => { cmp.start(); }, )+
+                }
+            }
+            fn update(&mut self) {
+                match *self {
+                    $( $e::$c(ref mut cmp) => { cmp.update(); }, )+
+                }
+            }
+        }
+    }
+}
+
 pub type UpdateOrder = i32;
 
 pub trait SubComponent {

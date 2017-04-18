@@ -6,6 +6,7 @@ use std::{thread, time};
 use std::rc::{Rc,Weak};
 use std::cell::RefCell;
 
+#[macro_use]
 mod entity_component;
 mod sub_component;
 mod sample1;
