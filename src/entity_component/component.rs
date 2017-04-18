@@ -1,7 +1,7 @@
 use entity_component::entity::EntityID;
 
 macro_rules! declare_component {
-    ($e:ident, $($c:ident),+) => {
+    ($e:ident = $($c:ident),+) => {
         enum $e {
             $( $c($c), )+
         }
