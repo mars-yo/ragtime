@@ -10,5 +10,16 @@ pub struct Receptor {}
 impl Receptor {
     pub fn start(&mut self) {}
     pub fn update(&mut self) {}
-    pub fn on_message(&mut self, id: ConnectionID, msg: &StringMessage) {}
+    pub fn on_message(&mut self, id: ConnectionID, msg: &StringMessage) {
+        let params = msg.params();
+        if params.len() <= 0 {
+            return;
+        }
+        if let Some(cmd) = params.get(0) {
+            if *cmd == "login" {
+
+            }
+
+        }
+    }
 }
