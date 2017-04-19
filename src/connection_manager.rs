@@ -11,13 +11,13 @@ use std::net::ToSocketAddrs;
 use std::net::SocketAddr;
 use std::io::{Write, Read, BufReader, BufRead};
 use self::byteorder::{BigEndian, ByteOrder};
-use entity_component::component::*;
 
 pub type ConnectionID = u32;
 
 pub trait Message {
     fn new() -> Self;
     fn read_from<T: BufRead>(&mut self, reader: &mut T) -> bool;
+    fn clear(&mut self);
 }
 pub trait MessageHandler<T: Message> {
     fn on_message(&mut self, id: ConnectionID, msg: &T);
@@ -47,6 +47,7 @@ impl<T: Message, U: MessageHandler<T>> Connection<T, U> {
             if let Some(handler) = self.message_handler.upgrade() {
                 handler.borrow_mut().on_message(self.id, &self.message);
             }
+            self.message.clear();
         }
     }
     fn send(&mut self, data: &[u8]) {
@@ -91,12 +92,7 @@ impl<T: Message, U: MessageHandler<T>> ConnectionManager<T, U> {
     pub fn set_default_message_handler(&mut self, handler: Weak<RefCell<U>>) {
         self.default_message_handler = handler;
     }
-}
-
-impl<T: Message, U: MessageHandler<T>> SubComponent for ConnectionManager<T, U> {
-    fn start(&mut self) {}
-
-    fn update(&mut self) {
+    pub fn update(&mut self) {
         match self.listener.accept() {
             Ok((stream, addr)) => {
                 stream.set_nonblocking(true);
@@ -107,7 +103,7 @@ impl<T: Message, U: MessageHandler<T>> SubComponent for ConnectionManager<T, U> 
                 self.next_conn_id += 1;
             }
             Err(e) => {
-                println!("no new connection");
+                // println!("no new connection");
             }
         }
 

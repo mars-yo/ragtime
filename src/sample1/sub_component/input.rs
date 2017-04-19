@@ -1,4 +1,4 @@
-use sub_component::game_logic::connection_manager::*;
+use connection_manager::*;
 use string_message::*;
 
 pub struct Input {}

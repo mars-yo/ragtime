@@ -8,7 +8,9 @@ use std::cell::RefCell;
 
 #[macro_use]
 mod entity_component;
-mod sub_component;
+mod connection_manager;
+mod db_manager;
+mod game_object_manager;
 mod sample1;
 mod string_message;
 

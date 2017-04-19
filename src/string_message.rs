@@ -1,5 +1,6 @@
 use std::io::{Write, Read, BufReader, BufRead};
-use sub_component::game_logic::connection_manager::Message;
+use connection_manager::Message;
+use std::str::FromStr;
 
 pub struct StringMessage {
     body: String,
@@ -10,8 +11,13 @@ impl Message for StringMessage {
         StringMessage { body: String::new() }
     }
     fn read_from<T: BufRead>(&mut self, reader: &mut T) -> bool {
-        reader.read_to_string(&mut self.body);
+        reader.read_line(&mut self.body);
+        self.body = String::from_str(self.body.trim()).unwrap();
+        if self.body.is_empty() { return false; }
         true
+    }
+    fn clear(&mut self) {
+        self.body.clear();
     }
 }
 

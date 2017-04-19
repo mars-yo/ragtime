@@ -67,6 +67,7 @@ impl<T> System<T>
             m.add_component(order, weakc);
             self.entities.insert(entity_id, m);
         }
+
         // let ent = self.entities.get_mut(&entity_id).unwrap();
         // ent.insert(order, weakc);
 
