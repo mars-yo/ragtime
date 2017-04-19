@@ -88,6 +88,9 @@ impl<T: Message, U: MessageHandler<T>> ConnectionManager<T, U> {
             val.set_message_handler(handler);
         }
     }
+    pub fn set_default_message_handler(&mut self, handler: Weak<RefCell<U>>) {
+        self.default_message_handler = handler;
+    }
 }
 
 impl<T: Message, U: MessageHandler<T>> SubComponent for ConnectionManager<T, U> {

@@ -50,6 +50,9 @@ impl<T> Component<T>
     pub fn sub_component(&self) -> &T {
         &self.sub_component
     }
+    pub fn sub_component_mut(&mut self) -> &mut T {
+        &mut self.sub_component
+    }
     pub fn update(&mut self) {
         if self.first_call {
             self.sub_component.start();
