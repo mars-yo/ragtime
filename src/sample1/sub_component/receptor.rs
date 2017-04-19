@@ -18,7 +18,7 @@ impl Receptor {
         if params.len() <= 0 {
             return;
         }
-        if let (Some(cmd),Some(arg)) = (params.get(0),params.get(1)) {
+        if let (Some(cmd), Some(arg)) = (params.get(0), params.get(1)) {
             if *cmd == "login" {
                 println!("login {}", *arg);
             }

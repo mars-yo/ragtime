@@ -2,6 +2,8 @@ mod sub_component;
 
 use std::cell::RefCell;
 use std::rc::{Weak, Rc};
+use std::time::Duration;
+use std::thread;
 use entity_component::component::*;
 use entity_component::entity::*;
 use entity_component::system::*;
@@ -17,6 +19,12 @@ use super::string_message::*;
 type Sample1ConnectionManager = ConnectionManager<StringMessage, Component<GameLogicComponent>>;
 type Sample1GameObjectManager = GameObjectManager<GameObjectComponent>;
 
+declare_component!(GameLogicComponent = Sample1ConnectionManager,
+                   DBManager,
+                   Sample1GameObjectManager,
+                   Receptor);
+declare_component!(GameObjectComponent = Input, Position);
+
 impl MessageHandler<StringMessage> for Component<GameLogicComponent> {
     fn on_message(&mut self, id: ConnectionID, msg: &StringMessage) {
         match *self.sub_component_mut() {
@@ -28,16 +36,9 @@ impl MessageHandler<StringMessage> for Component<GameLogicComponent> {
     }
 }
 
-declare_component!(GameLogicComponent = Sample1ConnectionManager,
-                   DBManager,
-                   Sample1GameObjectManager,
-                   Receptor);
-declare_component!(GameObjectComponent = Input, Position);
-
-
-impl MessageHandler<StringMessage> for GameObjectComponent {
+impl MessageHandler<StringMessage> for Component<GameObjectComponent> {
     fn on_message(&mut self, id: ConnectionID, msg: &StringMessage) {
-        match *self {
+        match *self.sub_component_mut() {
             GameObjectComponent::Input(ref mut cmp) => {
                 cmp.on_message(id, msg);
             }
@@ -64,10 +65,10 @@ impl Sample1Game {
         let receptor = system.add_component(1, receptor);
 
         let mut conn = Sample1ConnectionManager::new("127.0.0.1:8080".to_string());
-        conn.set_default_message_handler( receptor.clone() );
+        conn.set_default_message_handler(receptor.clone());
         let conn = GameLogicComponent::Sample1ConnectionManager(conn);
         let conn = Component::new(singleton_id, conn);
-        let conn = system.add_component( 2, conn );
+        let conn = system.add_component(2, conn);
 
         Sample1Game {
             system: System::<GameLogicComponent>::new(),
@@ -75,14 +76,16 @@ impl Sample1Game {
             receptor: receptor.upgrade().unwrap(),
         }
     }
+    fn update(&mut self) {
+        self.system.update();
+    }
 }
 
 pub fn sample1_start() {
-
-
-
-    //make game AsMut
-    //add connection manager
-    //add game object manager
+    let mut game = Sample1Game::new();
+    loop {
+        game.update();
+        thread::sleep(Duration::from_millis(1000));
+    }
 
 }
