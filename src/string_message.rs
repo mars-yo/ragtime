@@ -16,9 +16,6 @@ impl Message for StringMessage {
         if self.body.is_empty() { return false; }
         true
     }
-    fn clear(&mut self) {
-        self.body.clear();
-    }
 }
 
 impl StringMessage {

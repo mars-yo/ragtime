@@ -1,25 +1,20 @@
 #[macro_use]
 extern crate log;
 
-use entity_component::component::SubComponent;
-use std::{thread, time};
-use std::rc::{Rc, Weak};
-use std::cell::RefCell;
-
 #[macro_use]
-mod entity_component;
-mod connection_manager;
-mod db_manager;
-mod game_object_manager;
-mod sample1;
-mod string_message;
+pub mod entity_component;
+pub mod connection_manager;
+pub mod db_manager;
+pub mod game_object_manager;
+pub mod string_message;
+pub mod room_manager;
 
 //connection_managerはゲーム、ルーム共通にしたい
 
-fn main() {
-    //    let mut conn_manager = sub_component::game_logic::connection_manager::ConnectionManager::new("127.0.0.1:53000".to_string());
-    sample1::sample1_start();
-}
+// fn main() {
+//     //    let mut conn_manager = sub_component::game_logic::connection_manager::ConnectionManager::new("127.0.0.1:53000".to_string());
+//     sample1::sample1_start();
+// }
 
 #[test]
 fn test() {

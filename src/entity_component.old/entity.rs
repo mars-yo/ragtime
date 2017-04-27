@@ -1,24 +1,24 @@
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::rc::Weak;
 use std::cell::RefCell;
 use entity_component::component::*;
 
 pub type EntityID = i32;
 
-pub struct Entity
+pub struct Entity<T>
+    where T: SubComponent
 {
     id: EntityID,
-    components: HashMap<UpdateOrder, Rc<RefCell<Component>>>,
-    deleted: bool,
+    components: HashMap<UpdateOrder, Weak<RefCell<Component<T>>>>,
 }
 
-impl Entity
+impl<T> Entity<T>
+    where T: SubComponent
 {
-    pub fn new(id: EntityID) -> Entity {
-        Entity {
+    pub fn new(id: EntityID) -> Self {
+        Entity::<T> {
             id: id,
             components: HashMap::new(),
-            deleted: false,
         }
     }
     pub fn id(&self) -> EntityID {
@@ -26,15 +26,9 @@ impl Entity
     }
     pub fn add_component<'a>(&'a mut self,
                              order: UpdateOrder,
-                             c: Rc<RefCell<Component>>)
+                             c: Weak<RefCell<Component<T>>>)
                              -> &'a mut Self {
         self.components.insert(order, c);
         self
-    }
-    pub fn set_deleted(&mut self) {
-        self.deleted = true;
-    }
-    pub fn is_deleted(&self) -> bool {
-        self.deleted
     }
 }

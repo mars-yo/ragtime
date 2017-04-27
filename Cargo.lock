@@ -1,9 +1,8 @@
 [root]
-name = "ragtime"
+name = "ragtime-sample1"
 version = "0.1.0"
 dependencies = [
- "byteorder 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ragtime 0.1.0",
 ]
 
 [[package]]
@@ -15,6 +14,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "log"
 version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "ragtime"
+version = "0.1.0"
+dependencies = [
+ "byteorder 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [metadata]
 "checksum byteorder 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c40977b0ee6b9885c9013cd41d9feffdd22deb3bb4dc3a71d901cc7a77de18c8"

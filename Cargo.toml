@@ -6,3 +6,6 @@ authors = ["myoshida <myoshida@aiming-inc.com>"]
 [dependencies]
 log = "0.3.7"
 byteorder = "1.0.0"
+
+[workspace]
+members = ["ragtime_sample1"]

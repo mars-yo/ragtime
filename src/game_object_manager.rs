@@ -2,14 +2,12 @@ use entity_component::component::*;
 use entity_component::entity::*;
 use entity_component::system::*;
 
-pub struct GameObjectManager<T>
-    where T: SubComponent
+pub struct GameObjectManager
 {
-    system: System<T>,
+    system: System,
 }
 
-impl<T> SubComponent for GameObjectManager<T>
-    where T: SubComponent
+impl Component for GameObjectManager
 {
     fn start(&mut self) {}
     fn update(&mut self) {
