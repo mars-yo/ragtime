@@ -58,8 +58,9 @@ impl Sample1Game {
 
         let (tx,rx) = channel();
 
-        let mut conn = ConnectionManager::<StringMessage>::new("127.0.0.1".to_string(), tx);
-        let room_man = RoomManager::<Sample1Room>::new(80);
+        let mut conn = ConnectionManager::<StringMessage>::new("127.0.0.1:8080".to_string(), tx);
+
+        let room_man = RoomManager::<Sample1Room>::new(2);
         let db = DBManager::new();
 
         Sample1Game {
@@ -71,10 +72,13 @@ impl Sample1Game {
     }
     fn update(&mut self) {
         //recv msg from chann, create room when requested, join room when requested,
+        self.connection_manager.update();
+        
         if let Ok(msg) = self.recv_msg_chan_rx.try_recv() {
             let conn_id = msg.0;
             let msg = msg.1;
             if msg.params()[0] == "create_room" {
+                println!("create_room");
                 let (recv_msg_chan_tx,recv_msg_chan_rx) = channel();
                 let info = room::Sample1RoomInitializeInfo::new(recv_msg_chan_rx);
                 self.room_manager.create_room(info);

@@ -13,6 +13,7 @@ pub struct Sample1RoomInitializeInfo {
 
 impl Sample1RoomInitializeInfo {
     pub fn new(recv_msg_chan_rx:Receiver<MessageOnChannel<StringMessage>>) -> Sample1RoomInitializeInfo {
+        println!("new_room");
         Sample1RoomInitializeInfo {
             recv_msg_chan_rx:recv_msg_chan_rx,
         }
@@ -36,6 +37,10 @@ impl Room for Sample1Room {
         }
     }
     fn update(&mut self) -> Continuance {
+        println!("room update");
+        if let Ok(msg) = self.recv_msg_chan_rx.try_recv() {
+            println!("room msg {}", msg.1.params()[0]);
+        }
         self.system.update();
         //check status
         Continuance::Continue
