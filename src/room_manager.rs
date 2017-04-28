@@ -14,12 +14,12 @@ pub enum Continuance {
 
 pub trait Room {
     type InitializeInfo: Send + 'static;
-    fn new(info:&Self::InitializeInfo) -> Self;
+    fn new(info:Self::InitializeInfo) -> Self;
     fn update(&mut self) -> Continuance;
 }
 
 struct RoomsInThread<T:Room> {
-    new_room_tx:Sender<Box<T::InitializeInfo>>,
+    new_room_tx:Sender<T::InitializeInfo>,
 }
 
 impl<T> RoomsInThread<T> where T:Room {
@@ -30,16 +30,16 @@ impl<T> RoomsInThread<T> where T:Room {
         }
     }
     fn add_room(&mut self, info:T::InitializeInfo) {
-        self.new_room_tx.send(Box::new(info));
+        self.new_room_tx.send(info);
     }
     fn start(&mut self) {
-        let (new_room_tx,new_room_rx):(Sender<Box<T::InitializeInfo>>,Receiver<Box<T::InitializeInfo>>) = channel();
+        let (new_room_tx,new_room_rx):(Sender<T::InitializeInfo>,Receiver<T::InitializeInfo>) = channel();
         self.new_room_tx= new_room_tx;
         thread::spawn(move||{
             let mut rooms = Vec::new();
             loop {
                 if let Ok(new_room_info) = new_room_rx.try_recv() {
-                    let  new_room_info = new_room_info.borrow();
+                    // let  new_room_info = new_room_info.borrow();
                     let room = T::new(new_room_info);
                     rooms.push(Box::new(room));
                 }

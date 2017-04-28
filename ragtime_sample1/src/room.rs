@@ -20,16 +20,18 @@ impl Sample1RoomInitializeInfo {
 }
 
 pub struct Sample1Room {
+    recv_msg_chan_rx:Receiver<MessageOnChannel<StringMessage>>,
     system: System,
 }
 
 impl Room for Sample1Room {
     type InitializeInfo = Sample1RoomInitializeInfo;
 
-    fn new(info:&Sample1RoomInitializeInfo) -> Sample1Room {
+    fn new(info:Sample1RoomInitializeInfo) -> Sample1Room {
         //systemにいろいろ登録
         //recv_msg_chan_rx:Receiver<(ConnectionID,StringMessage)>,
         Sample1Room {
+            recv_msg_chan_rx: info.recv_msg_chan_rx,
             system: System::new(),
         }
     }
