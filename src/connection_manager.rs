@@ -28,17 +28,22 @@ struct Connection<T: Message> {
     send_stream: TcpStream,
     recv_buffer: BufReader<TcpStream>,
     message: T,
+    send_msg_chan_rx: Receiver<MessageOnChannel<T>>,
+    send_msg_chan_tx: Sender<MessageOnChannel<T>>,
     recv_msg_chan_tx: Sender<MessageOnChannel<T>>,
 }
 
 impl<T: Message> Connection<T> {
     fn new(id: ConnectionID, stream: TcpStream, recv_msg_chan_tx: Sender<MessageOnChannel<T>>) -> Connection<T> {
         let buf = BufReader::with_capacity(1024, stream.try_clone().unwrap());
+        let (tx,rx) = channel();
         Connection::<T> {
             id: id,
             send_stream: stream,
             recv_buffer: buf,
             message: Message::new(),
+            send_msg_chan_tx: tx,
+            send_msg_chan_rx: rx,
             recv_msg_chan_tx: recv_msg_chan_tx,
         }
     }
@@ -52,7 +57,10 @@ impl<T: Message> Connection<T> {
     fn send(&mut self, data: &[u8]) {
         self.send_stream.write_all(data);
     }
-    fn set_recv_msg_cann(&mut self, tx: Sender<MessageOnChannel<T>>) {
+    fn send_msg_chan_tx(&self) -> Sender<MessageOnChannel<T>> {
+        self.send_msg_chan_tx.clone()
+    }
+    fn set_recv_msg_chan_tx(&mut self, tx: Sender<MessageOnChannel<T>>) {
         self.recv_msg_chan_tx = tx;
     }
 }
@@ -82,9 +90,15 @@ impl<T: Message> ConnectionManager<T> {
             val.send(data.as_slice());
         }
     }
-    pub fn set_message_handler(&mut self, conn_id: ConnectionID, tx: Sender<MessageOnChannel<T>>) {
+    pub fn send_msg_chan(&self, conn_id:ConnectionID) -> Option<Sender<MessageOnChannel<T>>> {
+        if let Some(val) = self.connections.get(&conn_id) {
+            return Some(val.send_msg_chan_tx())
+        }
+        None
+    }
+    pub fn set_recv_message_chan(&mut self, conn_id: ConnectionID, tx: Sender<MessageOnChannel<T>>) {
         if let Some(val) = self.connections.get_mut(&conn_id) {
-            val.set_recv_msg_cann(tx);
+            val.set_recv_msg_chan_tx(tx);
         }
     }
     pub fn update(&mut self) {

@@ -10,7 +10,8 @@ use std::cell::RefCell;
 use std::rc::{Weak, Rc};
 use std::time::Duration;
 use std::thread;
-use std::sync::mpsc::{channel,Receiver};
+use std::collections::HashMap;
+use std::sync::mpsc::{channel,Receiver,Sender};
 use input::*;
 use receptor::*;
 use position::*;
@@ -25,32 +26,12 @@ use ragtime::game_object_manager::*;
 use ragtime::room_manager::*;
 use ragtime::string_message::*;
 
-
-// type Sample1ConnectionManager = ConnectionManager<StringMessage, Component<ObjectComponent>>;
-// type Sample1GameObjectManager = GameObjectManager<ObjectComponent>;
-//
-// declare_component!(LogicComponent = Sample1GameObjectManager);
-// declare_component!(ObjectComponent = Receptor, Input, Position);
-//
-// impl MessageHandler<StringMessage> for Component<ObjectComponent> {
-//     fn on_message(&mut self, id: ConnectionID, msg: &StringMessage) {
-//         match *self.sub_component_mut() {
-//             ObjectComponent::Receptor(ref mut cmp) => {
-//                 cmp.on_message(id, msg);
-//             }
-//             ObjectComponent::Input(ref mut cmp) => {
-//                 cmp.on_message(id, msg);
-//             }
-//             _ => {}
-//         }
-//     }
-// }
-
 struct Sample1Game {
     room_manager:RoomManager<Sample1Room>,
     connection_manager: ConnectionManager<StringMessage>,
     db_manager: DBManager,
-    recv_msg_chan_rx: Receiver<MessageOnChannel<StringMessage>>,
+    room_recv_msg_chan_tx_map: HashMap<i32, Sender<MessageOnChannel<StringMessage>>>,
+    receptor_recv_msg_chan_rx: Receiver<MessageOnChannel<StringMessage>>,
 }
 
 impl Sample1Game {
@@ -67,14 +48,15 @@ impl Sample1Game {
             room_manager: room_man,
             connection_manager: conn,
             db_manager: db,
-            recv_msg_chan_rx: rx,
+            room_recv_msg_chan_tx_map: HashMap::new(),
+            receptor_recv_msg_chan_rx: rx,
         }
     }
     fn update(&mut self) {
         //recv msg from chann, create room when requested, join room when requested,
         self.connection_manager.update();
-        
-        if let Ok(msg) = self.recv_msg_chan_rx.try_recv() {
+
+        if let Ok(msg) = self.receptor_recv_msg_chan_rx.try_recv() {
             let conn_id = msg.0;
             let msg = msg.1;
             if msg.params()[0] == "create_room" {
@@ -82,7 +64,8 @@ impl Sample1Game {
                 let (recv_msg_chan_tx,recv_msg_chan_rx) = channel();
                 let info = room::Sample1RoomInitializeInfo::new(recv_msg_chan_rx);
                 self.room_manager.create_room(info);
-                self.connection_manager.set_message_handler(conn_id, recv_msg_chan_tx);
+                self.room_recv_msg_chan_tx_map.insert(1, recv_msg_chan_tx.clone());
+                self.connection_manager.set_recv_message_chan(conn_id, recv_msg_chan_tx);
             }
         }
     }
