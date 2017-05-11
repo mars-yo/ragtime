@@ -30,7 +30,7 @@ struct Sample1Game {
     room_manager:RoomManager<Sample1Room>,
     connection_manager: ConnectionManager<StringMessage>,
     db_manager: DBManager,
-    room_recv_msg_chan_tx_map: HashMap<i32, Sender<MessageOnChannel<StringMessage>>>,
+    room_recv_msg_chan_tx_map: HashMap<RoomID, Sender<MessageOnChannel<StringMessage>>>,
     receptor_recv_msg_chan_rx: Receiver<MessageOnChannel<StringMessage>>,
 }
 
@@ -62,9 +62,16 @@ impl Sample1Game {
             if msg.params()[0] == "create_room" {
                 println!("create_room");
                 let (recv_msg_chan_tx,recv_msg_chan_rx) = channel();
-                let info = room::Sample1RoomInitializeInfo::new(recv_msg_chan_rx);
-                self.room_manager.create_room(info);
-                self.room_recv_msg_chan_tx_map.insert(1, recv_msg_chan_tx.clone());
+                let info = room::InitRoomInfo::new(recv_msg_chan_rx);
+                let room_id = self.room_manager.create_room(info);
+                self.room_recv_msg_chan_tx_map.insert(room_id, recv_msg_chan_tx.clone());
+                self.connection_manager.set_recv_message_chan(conn_id, recv_msg_chan_tx);
+            }
+            if msg.params()[0] == "join_room" {
+                println!("join_room");
+                let (recv_msg_chan_tx,recv_msg_chan_rx) = channel();
+                let info = room::JoinRoomInfo::new(recv_msg_chan_rx);
+                self.room_manager.join_room(1, info);
                 self.connection_manager.set_recv_message_chan(conn_id, recv_msg_chan_tx);
             }
         }
