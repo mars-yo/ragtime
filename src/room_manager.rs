@@ -128,6 +128,8 @@ impl<RoomType> RoomManager<RoomType> where RoomType:Room {
     pub fn join_room(&mut self, room_id:RoomID, info:RoomType::JoinInfoType) {
         if let Some(thread_id) = self.room_id_map.get(&room_id) {
             self.rooms[*thread_id].join_room(room_id, info);
+        } else {
+            println!("room id {} not found", room_id);
         }
     }
     pub fn find_room(&self) {}

@@ -61,7 +61,7 @@ impl Sample1Game {
             let msg = msg.1;
             if msg.params()[0] == "create_room" {
                 println!("create_room");
-                let player_id = msg.params()[1].parse::<u64>().unwrap();
+                let player_id = msg.params()[1].parse::<PlayerID>().unwrap();
                 let info = InitRoomInfo::new("test".to_string());
                 let room_id = self.room_manager.create_room(info);
 
@@ -74,11 +74,11 @@ impl Sample1Game {
             if msg.params()[0] == "join_room" {
                 println!("join_room");
                 let player_id = msg.params()[1].parse::<PlayerID>().unwrap();
-                let room_id = msg.params()[2].parse::<i32>().unwrap();
+                let room_id = msg.params()[2].parse::<u32>().unwrap();
                 let (recv_msg_chan_tx,recv_msg_chan_rx) = channel();
 
                 let info = room::JoinRoomInfo::new(player_id, recv_msg_chan_rx);
-                self.room_manager.join_room(1, info);
+                self.room_manager.join_room(room_id, info);
                 self.players.insert(player_id, recv_msg_chan_tx.clone());
                 self.connection_manager.set_recv_message_chan(conn_id, recv_msg_chan_tx);
             }
