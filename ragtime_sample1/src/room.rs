@@ -7,25 +7,29 @@ use ragtime::entity_component::system::*;
 use ragtime::connection_manager::*;
 use ragtime::string_message::*;
 
+pub type PlayerID = u64;
+
 pub struct InitRoomInfo {
-    recv_msg_chan_rx:Receiver<MessageOnChannel<StringMessage>>,
+    name:String,
 }
 
 pub struct JoinRoomInfo {
     recv_msg_chan_rx:Receiver<MessageOnChannel<StringMessage>>,
+    player_id:PlayerID,
 }
 
 impl InitRoomInfo {
-    pub fn new(recv_msg_chan_rx:Receiver<MessageOnChannel<StringMessage>>) -> InitRoomInfo {
+    pub fn new(name:String) -> InitRoomInfo {
         InitRoomInfo {
-            recv_msg_chan_rx:recv_msg_chan_rx,
+            name:name,
         }
     }
 }
 
 impl JoinRoomInfo {
-    pub fn new(recv_msg_chan_rx:Receiver<MessageOnChannel<StringMessage>>) -> JoinRoomInfo {
+    pub fn new(player_id:PlayerID, recv_msg_chan_rx:Receiver<MessageOnChannel<StringMessage>>) -> JoinRoomInfo {
         JoinRoomInfo {
+            player_id:player_id,
             recv_msg_chan_rx:recv_msg_chan_rx,
         }
     }
@@ -33,7 +37,8 @@ impl JoinRoomInfo {
 
 pub struct Sample1Room {
     id: RoomID,
-    recv_msg_chan_rx:Receiver<MessageOnChannel<StringMessage>>,
+    name: String,
+    players:Vec<(Receiver<MessageOnChannel<StringMessage>>, PlayerID)>,
     system: System,
 }
 
@@ -43,18 +48,19 @@ impl Room for Sample1Room {
 
     fn new(id:RoomID, info:InitRoomInfo) -> Sample1Room {
         println!("new room");
-        //systemにいろいろ登録
-        //recv_msg_chan_rx:Receiver<(ConnectionID,StringMessage)>,
         Sample1Room {
             id: id,
-            recv_msg_chan_rx: info.recv_msg_chan_rx,
+            name: info.name,
+            players: Vec::new(),
             system: System::new(),
         }
     }
     fn update(&mut self) -> Continuance {
         println!("room update");
-        if let Ok(msg) = self.recv_msg_chan_rx.try_recv() {
-            println!("room msg {}", msg.1.params()[0]);
+        for ref elm in self.players.iter_mut() {
+            if let Ok(msg) = elm.0.try_recv() {
+                println!("room msg {}", msg.1.params()[0]);
+            }
         }
         self.system.update();
         //check status
@@ -62,6 +68,7 @@ impl Room for Sample1Room {
     }
     fn join(&mut self, info:JoinRoomInfo) {
         println!("join room");
+        self.players.push((info.recv_msg_chan_rx, info.player_id));//TODO例外処理
     }
     fn id(&self) -> RoomID {
         self.id
