@@ -6,6 +6,7 @@ use ragtime::room_manager::*;
 use ragtime::entity_component::system::*;
 use ragtime::connection_manager::*;
 use ragtime::string_message::*;
+use ragtime::game_object_manager::*;
 
 pub type PlayerID = u64;
 
@@ -35,11 +36,16 @@ impl JoinRoomInfo {
     }
 }
 
+struct Player {
+    input: Input,
+    pos: Position,
+}
+
 pub struct Sample1Room {
     id: RoomID,
     name: String,
     players:Vec<(Receiver<MessageOnChannel<StringMessage>>, PlayerID)>,
-    system: System,
+    objects: GameObjectManager,
 }
 
 impl Room for Sample1Room {
