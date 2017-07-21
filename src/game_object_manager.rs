@@ -1,12 +1,14 @@
 use std::collections::{HashMap,HashSet,BTreeSet};
 use std::rc::Rc;
 use std::cell::RefCell;
+use id_generator::IDGenerator;
 
 type ObjectID = i32;
 type ComponentID = i32;
 
 pub trait GameObject {
     fn id(&self) -> ObjectID;
+    fn set_id(&mut self, id:ObjectID);
     fn component_ids(&self) -> &Vec<ComponentID>;
     fn update_component(&mut self, comp_id:ComponentID);
     fn is_deleted(&self) -> bool;
@@ -14,16 +16,17 @@ pub trait GameObject {
 
 pub struct GameObjectManager
 {
+    id_gen: IDGenerator,
     objects: HashMap<ObjectID, Rc<RefCell<GameObject>>>,
     component_ids: BTreeSet<ComponentID>,
 }
 
 impl GameObjectManager {
     fn add_object(&mut self, obj:Rc<RefCell<GameObject>>) {
-        let mut id:ObjectID = 0;
+        let id = self.id_gen.next();
         {
-            let obj = obj.borrow();
-            id = obj.id();
+            let mut obj = obj.borrow_mut();
+            obj.set_id(id);
             for cid in obj.component_ids() {
                 self.component_ids.insert(*cid);
             }

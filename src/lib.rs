@@ -9,6 +9,7 @@ pub mod db_manager;
 pub mod game_object_manager;
 pub mod string_message;
 pub mod room_manager;
+pub mod id_generator;
 
 //connection_managerはゲーム、ルーム共通にしたい
 
