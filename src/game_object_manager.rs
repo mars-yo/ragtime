@@ -9,9 +9,8 @@ type ComponentID = i32;
 pub trait GameObject {
     fn id(&self) -> ObjectID;
     fn set_id(&mut self, id:ObjectID);
-    fn component_ids(&self) -> &Vec<ComponentID>;
     fn update_component(&mut self, comp_id:ComponentID);
-    fn is_deleted(&self) -> bool;
+    fn is_zombie(&self) -> bool;
 }
 
 pub struct GameObjectManager
@@ -27,11 +26,13 @@ impl GameObjectManager {
         {
             let mut obj = obj.borrow_mut();
             obj.set_id(id);
-            for cid in obj.component_ids() {
-                self.component_ids.insert(*cid);
-            }
         }
         self.objects.insert(id, obj);
+    }
+    fn set_component_id(&mut self, ids:&mut [ComponentID]) {
+        for id in ids {
+            self.component_ids.insert(*id);
+        }
     }
     fn update(&mut self) {
         let mut to_remove = HashSet::new();
@@ -39,7 +40,7 @@ impl GameObjectManager {
             for (_, o) in &self.objects {
                 match o.try_borrow_mut() {
                     Ok(mut o) => {
-                        if o.is_deleted() {
+                        if o.is_zombie() {
                             to_remove.insert(o.id());
                         } else {
                             o.update_component(*cid);

@@ -1,8 +1,7 @@
 #[macro_use]
 extern crate ragtime;
 
-mod input;
-mod position;
+mod components;
 mod receptor;
 mod room;
 
@@ -12,9 +11,7 @@ use std::time::Duration;
 use std::thread;
 use std::collections::HashMap;
 use std::sync::mpsc::{channel,Receiver,Sender};
-use input::*;
 use receptor::*;
-use position::*;
 use room::*;
 
 use ragtime::entity_component::component::*;

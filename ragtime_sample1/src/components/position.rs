@@ -1,17 +1,19 @@
 extern crate ragtime;
 
-use ragtime::entity_component::component::*;
+use components::input::*;
 
 pub struct Position {
+    input: *const Input,
     pos: (f32, f32),
     move_per_frame: (f32, f32),
 }
 
-impl Component for Position {
+impl Position {
     fn start(&mut self) {}
     fn update(&mut self) {
         self.pos.0 += self.move_per_frame.0;
         self.pos.1 += self.move_per_frame.1;
+        let p = self.input.pos();
     }
 }
 

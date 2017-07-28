@@ -3,7 +3,6 @@ extern crate ragtime;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::{Sender,Receiver};
 use ragtime::room_manager::*;
-use ragtime::entity_component::system::*;
 use ragtime::connection_manager::*;
 use ragtime::string_message::*;
 use ragtime::game_object_manager::*;
@@ -36,11 +35,6 @@ impl JoinRoomInfo {
     }
 }
 
-struct Player {
-    input: Input,
-    pos: Position,
-}
-
 pub struct Sample1Room {
     id: RoomID,
     name: String,
@@ -58,7 +52,6 @@ impl Room for Sample1Room {
             id: id,
             name: info.name,
             players: Vec::new(),
-            system: System::new(),
         }
     }
     fn update(&mut self) -> Continuance {
@@ -68,7 +61,6 @@ impl Room for Sample1Room {
                 println!("room msg {}", msg.1.params()[0]);
             }
         }
-        self.system.update();
         //check status
         Continuance::Continue
     }
