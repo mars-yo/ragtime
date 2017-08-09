@@ -2,6 +2,10 @@ extern crate ragtime;
 
 use std::sync::mpsc::channel;
 use std::sync::mpsc::{Sender,Receiver};
+use std::rc::Rc;
+use std::cell::RefCell;
+use game_objects::player::*;
+use components::typedef;
 use ragtime::room_manager::*;
 use ragtime::connection_manager::*;
 use ragtime::string_message::*;
@@ -38,7 +42,7 @@ impl JoinRoomInfo {
 pub struct Sample1Room {
     id: RoomID,
     name: String,
-    players:Vec<(Receiver<MessageOnChannel<StringMessage>>, PlayerID)>,
+//    players:Vec<(Receiver<MessageOnChannel<StringMessage>>, PlayerID)>,
     objects: GameObjectManager,
 }
 
@@ -48,25 +52,31 @@ impl Room for Sample1Room {
 
     fn new(id:RoomID, info:InitRoomInfo) -> Sample1Room {
         println!("new room");
+        let mut objects = GameObjectManager::new();
+        objects.set_component_types(&[typedef::Input,typedef::Position]);
         Sample1Room {
             id: id,
             name: info.name,
-            players: Vec::new(),
+            objects: objects,
+//            players: Vec::new(),
         }
     }
     fn update(&mut self) -> Continuance {
         println!("room update");
-        for ref elm in self.players.iter_mut() {
-            if let Ok(msg) = elm.0.try_recv() {
-                println!("room msg {}", msg.1.params()[0]);
-            }
-        }
+        // for ref elm in self.players.iter_mut() {
+        //     if let Ok(msg) = elm.0.try_recv() {
+        //         println!("room msg {}", msg.1.params()[0]);
+        //     }
+        // }
         //check status
+        self.objects.update();
         Continuance::Continue
     }
     fn join(&mut self, info:JoinRoomInfo) {
         println!("join room");
-        self.players.push((info.recv_msg_chan_rx, info.player_id));//TODO例外処理
+        let p = Player::new(info.recv_msg_chan_rx);
+        self.objects.add_object(Rc::new(RefCell::new(p)));
+//        self.players.push((info.recv_msg_chan_rx, info.player_id));//TODO例外処理
     }
     fn id(&self) -> RoomID {
         self.id

@@ -4,6 +4,7 @@ extern crate ragtime;
 mod components;
 mod receptor;
 mod room;
+mod game_objects;
 
 use std::cell::RefCell;
 use std::rc::{Weak, Rc};
@@ -14,9 +15,6 @@ use std::sync::mpsc::{channel,Receiver,Sender};
 use receptor::*;
 use room::*;
 
-use ragtime::entity_component::component::*;
-use ragtime::entity_component::entity::*;
-use ragtime::entity_component::system::*;
 use ragtime::connection_manager::*;
 use ragtime::db_manager::DBManager;
 use ragtime::game_object_manager::*;

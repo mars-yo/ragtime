@@ -10,11 +10,18 @@ pub struct Input {
 }
 
 impl Input {
-    fn start(&mut self) {}
-    fn update(&mut self) {
-        //recv from chan
+    pub fn new(rx: Receiver<MessageOnChannel<StringMessage>>) -> Input {
+        Input {
+            msg_chan_rx: rx,
+            pos: (0f32,0f32),
+        }
     }
-    fn pos(&self) -> (f32,f32) {
+    pub fn update(&mut self) {
+        if let Ok(msg) = self.msg_chan_rx.try_recv() {
+            println!("room msg {}", msg.1.params()[0]);
+        }
+    }
+    pub fn pos(&self) -> (f32,f32) {
         self.pos
     }
 }

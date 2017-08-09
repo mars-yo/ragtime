@@ -48,6 +48,7 @@ impl<T: Message> Connection<T> {
         }
     }
     fn recv(&mut self) {
+        
         if self.message.read_from(&mut self.recv_buffer) {
             let mut msg = T::new();
             mem::swap(&mut msg, &mut self.message);

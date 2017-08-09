@@ -1,5 +1,5 @@
 extern crate ragtime;
-
+use std::ptr;
 use components::input::*;
 
 pub struct Position {
@@ -9,11 +9,20 @@ pub struct Position {
 }
 
 impl Position {
-    fn start(&mut self) {}
-    fn update(&mut self) {
+    pub fn new() -> Position {
+        Position {
+            input: ptr::null(),
+            pos: (0f32,0f32),
+            move_per_frame: (0f32,0f32),
+        }
+    }
+    pub fn set_input(&mut self, inp: *const Input) {
+        self.input = inp;
+    }
+    pub fn update(&mut self) {
         self.pos.0 += self.move_per_frame.0;
         self.pos.1 += self.move_per_frame.1;
-        let p = self.input.pos();
+//        let p = self.input.pos();
     }
 }
 
