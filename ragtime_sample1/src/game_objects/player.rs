@@ -35,11 +35,10 @@ impl GameObject for Player {
     }
     fn update_component(&mut self, comp_id:ComponentType) {
         println!("player update {}", comp_id);
-        if comp_id == typedef::Input {
-            self.input.update();
-        }
-        if comp_id == typedef::Position {
-            self.pos.update();
+        match comp_id {
+            typedef::Input => self.input.update(),
+            typedef::Position => self.pos.update(),
+            _ => panic!(""),
         }
     }
     fn is_zombie(&self) -> bool {

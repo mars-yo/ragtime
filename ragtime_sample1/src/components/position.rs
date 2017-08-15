@@ -19,10 +19,14 @@ impl Position {
     pub fn set_input(&mut self, inp: *const Input) {
         self.input = inp;
     }
+    fn input<'a>(&self) -> &'a Input {
+        unsafe {
+            &(*self.input)
+        }
+    }
     pub fn update(&mut self) {
-        self.pos.0 += self.move_per_frame.0;
-        self.pos.1 += self.move_per_frame.1;
-//        let p = self.input.pos();
+        self.pos.0 += self.input().moving().0;
+        self.pos.1 += self.input().moving().1;
     }
 }
 
