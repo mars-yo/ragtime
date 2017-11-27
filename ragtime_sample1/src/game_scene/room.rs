@@ -9,7 +9,7 @@ use components::typedef;
 use ragtime::room_manager::*;
 use ragtime::connection_manager::*;
 use ragtime::string_message::*;
-use ragtime::game_object_manager::*;
+use super::object_manager::*;
 
 pub type PlayerID = u64;
 
@@ -42,8 +42,8 @@ impl JoinRoomInfo {
 pub struct Sample1Room {
     id: RoomID,
     name: String,
-//    players:Vec<(Receiver<MessageOnChannel<StringMessage>>, PlayerID)>,
-    objects: GameObjectManager,
+    players:Vec<(Receiver<MessageOnChannel<StringMessage>>, PlayerID)>,
+    object_mgr: ObjectManager,
 }
 
 impl Room for Sample1Room {
@@ -57,8 +57,8 @@ impl Room for Sample1Room {
         Sample1Room {
             id: id,
             name: info.name,
-            objects: objects,
-//            players: Vec::new(),
+            players: Vec::new(),
+            object_mgr: ObjectManager::new(),
         }
     }
     fn update(&mut self) -> Continuance {

@@ -3,8 +3,7 @@ extern crate ragtime;
 
 mod components;
 mod receptor;
-mod room;
-mod game_objects;
+mod game_scene;
 
 use std::cell::RefCell;
 use std::rc::{Weak, Rc};
@@ -13,7 +12,8 @@ use std::thread;
 use std::collections::HashMap;
 use std::sync::mpsc::{channel,Receiver,Sender};
 use receptor::*;
-use room::*;
+
+use game_scene::room::*;
 
 use ragtime::connection_manager::*;
 use ragtime::db_manager::DBManager;
@@ -72,7 +72,7 @@ impl Sample1Game {
                 let room_id = msg.params()[2].parse::<u32>().unwrap();
                 let (recv_msg_chan_tx,recv_msg_chan_rx) = channel();
 
-                let info = room::JoinRoomInfo::new(player_id, recv_msg_chan_rx);
+                let info = JoinRoomInfo::new(player_id, recv_msg_chan_rx);
                 self.room_manager.join_room(room_id, info);
                 self.players.insert(player_id, recv_msg_chan_tx.clone());
                 self.connection_manager.set_recv_message_chan(conn_id, recv_msg_chan_tx);
