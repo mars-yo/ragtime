@@ -4,7 +4,7 @@ use std::sync::mpsc::channel;
 use std::sync::mpsc::{Sender,Receiver};
 use std::rc::Rc;
 use std::cell::RefCell;
-use game_objects::player::*;
+use game_scene::entities::player::*;
 use components::typedef;
 use ragtime::room_manager::*;
 use ragtime::connection_manager::*;
@@ -52,8 +52,6 @@ impl Room for Sample1Room {
 
     fn new(id:RoomID, info:InitRoomInfo) -> Sample1Room {
         println!("new room");
-        let mut objects = GameObjectManager::new();
-        objects.set_component_types(&[typedef::Input,typedef::Position]);
         Sample1Room {
             id: id,
             name: info.name,
@@ -69,13 +67,13 @@ impl Room for Sample1Room {
         //     }
         // }
         //check status
-        self.objects.update();
+        self.object_mgr.update();
         Continuance::Continue
     }
     fn join(&mut self, info:JoinRoomInfo) {
         println!("join room");
         let p = Player::new(info.recv_msg_chan_rx);
-        self.objects.add_object(Rc::new(RefCell::new(p)));
+        self.object_mgr.add_player(p);
 //        self.players.push((info.recv_msg_chan_rx, info.player_id));//TODO例外処理
     }
     fn id(&self) -> RoomID {

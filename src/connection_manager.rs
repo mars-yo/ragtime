@@ -16,7 +16,9 @@ use self::byteorder::{BigEndian, ByteOrder};
 //デフォルトハンドラをどうしよう、FnMutのクローンできない？
 
 pub type ConnectionID = u32;
-pub type MessageOnChannel<T> = Box<(ConnectionID,T)>;
+pub type MsgOnChannel<T> = Box<(ConnectionID,T)>;
+pub type MsgChanTx<T> = Sender<MsgOnChannel<T>;
+pub type MsgChanRx<T> = Receiver<MsgOnChannel<T>;
 
 pub trait Message {
     fn new() -> Self;
@@ -28,13 +30,13 @@ struct Connection<T: Message> {
     send_stream: TcpStream,
     recv_buffer: BufReader<TcpStream>,
     message: T,
-    send_msg_chan_rx: Receiver<MessageOnChannel<T>>,
-    send_msg_chan_tx: Sender<MessageOnChannel<T>>,
-    recv_msg_chan_tx: Sender<MessageOnChannel<T>>,
+    s2c_chan_tx: MsgChanTx<T>,
+    s2c_chan_rx: MsgChanRx<T>,
+    c2s_chan_tx: MsgChanTx<T>,
 }
 
 impl<T: Message> Connection<T> {
-    fn new(id: ConnectionID, stream: TcpStream, recv_msg_chan_tx: Sender<MessageOnChannel<T>>) -> Connection<T> {
+    fn new(id: ConnectionID, stream: TcpStream, c2s_chan_tx: MsgChanTx<T>) -> Connection<T> {
         let buf = BufReader::with_capacity(1024, stream.try_clone().unwrap());
         let (tx,rx) = channel();
         Connection::<T> {
@@ -42,9 +44,9 @@ impl<T: Message> Connection<T> {
             send_stream: stream,
             recv_buffer: buf,
             message: Message::new(),
-            send_msg_chan_tx: tx,
-            send_msg_chan_rx: rx,
-            recv_msg_chan_tx: recv_msg_chan_tx,
+            s2c_chan_tx: tx,
+            s2c_chan_rx: rx,
+            c2s_chan_tx: c2s_chan_tx,
         }
     }
     fn recv(&mut self) {
@@ -52,17 +54,17 @@ impl<T: Message> Connection<T> {
         if self.message.read_from(&mut self.recv_buffer) {
             let mut msg = T::new();
             mem::swap(&mut msg, &mut self.message);
-            self.recv_msg_chan_tx.send(Box::new((self.id,msg)));
+            self.c2s_chan_tx.send(Box::new((self.id,msg)));
         }
     }
     fn send(&mut self, data: &[u8]) {
         self.send_stream.write_all(data);
     }
-    fn send_msg_chan_tx(&self) -> Sender<MessageOnChannel<T>> {
-        self.send_msg_chan_tx.clone()
+    fn s2c_chan_tx(&self) -> MsgChanTx<T> {
+        self.s2c_chan_tx.clone()
     }
-    fn set_recv_msg_chan_tx(&mut self, tx: Sender<MessageOnChannel<T>>) {
-        self.recv_msg_chan_tx = tx;
+    fn set_c2s_chan_tx(&mut self, tx: MsgChanTx<T>) {
+        self.c2s_chan_tx = tx;
     }
 }
 

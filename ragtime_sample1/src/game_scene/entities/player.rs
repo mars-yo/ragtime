@@ -8,6 +8,12 @@ pub struct Player {
 }
 
 impl Player {
+    pub fn new() -> Player {
+        Player {
+            input: Input::new(),
+            position: Position::new(),
+        }
+    }
     fn update_input(&mut self) {
         self.input.update();
     }

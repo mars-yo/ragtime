@@ -4,10 +4,14 @@ use components::input::*;
 
 pub struct Position {
     pos: (f32, f32),
-    move_per_frame: (f32, f32),
 }
 
 impl Position {
+    pub fn new() -> Position {
+        Position {
+            pos: (0f32,0f32),
+        }
+    }
     pub fn start(&mut self) {}
     pub fn update(&mut self, speed: (f32,f32)) {
         self.pos.0 += speed.0;
