@@ -7,81 +7,64 @@ use std::sync::mpsc::{Sender,Receiver};
 use entity_component::system::*;
 use std::collections::HashMap;
 
+//create room when id not found.
+//command type as asssiated.
+// continuance -> can_delete
+
 pub type RoomID = u32;
 
-#[derive(PartialEq)]
-pub enum Continuance {
-    Continue,
-    Remove,
-}
-
-pub enum RoomCommand<InitInfoType,JoinInfoType> {
-    Create((RoomID,InitInfoType)),
-    Join((RoomID,JoinInfoType)),
-}
-
 pub trait Room {
-    type InitInfoType: Send + 'static;
-    type JoinInfoType: Send + 'static;
-    fn new(id:RoomID, info:Self::InitInfoType) -> Self;
-    fn join(&mut self, info:Self::JoinInfoType);
-    fn update(&mut self) -> Continuance;
-    fn id(&self) -> RoomID;
+    type CommandType: Send + 'static;
+    fn new(id:RoomID) -> Self;
+    fn on_command(&mut self, cmd:&Self::CommandType);
+    fn update(&mut self);
+    fn deletable(&self) -> bool;
 }
 
-struct RoomsInThread<RoomType> where RoomType:Room {
-    chan_tx:Sender<RoomCommand<RoomType::InitInfoType,RoomType::JoinInfoType>>,
+struct RoomsInThread<R:Room> {
+    chan_tx:Sender<(RoomID,R::CommandType)>,
 }
 
-impl<RoomType> RoomsInThread<RoomType> where RoomType:Room {
+impl<R> RoomsInThread<R> where R:Room {
 
-    fn new() -> RoomsInThread<RoomType> {
+    fn new() -> RoomsInThread<R> {
         let (tx,rx) = channel();
         RoomsInThread {
             chan_tx:tx,
         }
     }
-    fn add_room(&mut self, id:RoomID, info:RoomType::InitInfoType) {
-        let cmd = RoomCommand::Create((id,info));
-        self.chan_tx.send(cmd);
+    fn send_command(&mut self, id:RoomID, cmd:R::CommandType ) {
+        self.chan_tx.send((id,cmd));
     }
-    fn join_room(&mut self, id:RoomID, info:RoomType::JoinInfoType ) {
-        let cmd = RoomCommand::Join((id,info));
-        self.chan_tx.send(cmd);
+    fn deletable(r: &(RoomID,R)) -> bool {
+        r.1.deletable()
     }
     fn start(&mut self) {
         // let (tx,rx):(Sender<Self::CommandType>,Receiver<Self::CommandType>) = channel();
         let (tx,rx) = channel();
         self.chan_tx = tx;
         thread::spawn(move||{
-            let mut rooms = Vec::new();
+            let mut rooms = Vec::<(RoomID,R)>::new();
             loop {
                 if let Ok(cmd) = rx.try_recv() {
-                    match cmd {
-                        RoomCommand::Create((id,info)) => {
-                            let room = RoomType::new(id, info);
-                            rooms.push(Box::new(room));
-                        }
-                        RoomCommand::Join((id,info)) => {
-                            for r in rooms.iter_mut() {
-                                if r.id() == id {
-                                    r.join(info);
-                                    break;
-                                }
-                            }
+                    let (id, cmd) = cmd;
+                    let mut found = false;
+                    for r in rooms.iter_mut() {
+                        let (room_id, ref mut room) = *r;
+                        if room_id == id {
+                            room.on_command(&cmd);
+                            found = true;
+                            break;
                         }
                     }
-                    // let  new_room_info = new_room_info.borrow();
-                }
-                let mut to_remove = Vec::new();
-                for i in 0..rooms.len() {
-                    if rooms[i].update() == Continuance::Remove {
-                        to_remove.push(i);
+                    if !found {
+                        let mut room = R::new(id);
+                        room.on_command(&cmd);
+                        rooms.push((id,room));
                     }
                 }
-                for index in &to_remove {
-                    rooms.remove(*index);
-                }
+//                let new_rooms: Vec<_> = rooms.iter().filter(|r| !r.1.deletable()).collect();
+                rooms.retain( &RoomsInThread::deletable );
                 thread::sleep(Duration::from_millis(1000));
             }
         });
@@ -90,19 +73,19 @@ impl<RoomType> RoomsInThread<RoomType> where RoomType:Room {
 
 type RoomThreadID = usize;
 
-pub struct RoomManager<T:Room> {
+pub struct RoomManager<R:Room> {
     num_thread:i32,
     next_entry:RoomThreadID,
     room_id_map:HashMap<RoomID, RoomThreadID>,//roomidとthreadをひもづける必要あり
-    rooms:Vec<RoomsInThread<T>>,
+    rooms:Vec<RoomsInThread<R>>,
     next_room_id:RoomID,
 }
 
-impl<RoomType> RoomManager<RoomType> where RoomType:Room {
-    pub fn new(num_thread:i32) -> RoomManager<RoomType> {
+impl<R> RoomManager<R> where R:Room {
+    pub fn new(num_thread:i32) -> RoomManager<R> {
         let mut rooms = Vec::new();
         for i in 0..num_thread {
-            let mut room = RoomsInThread::<RoomType>::new();
+            let mut room = RoomsInThread::<R>::new();
             room.start();
             rooms.push(room);
         }
@@ -114,20 +97,19 @@ impl<RoomType> RoomManager<RoomType> where RoomType:Room {
             next_room_id: 0,
         }
     }
-    pub fn create_room(&mut self, info:RoomType::InitInfoType) -> RoomID {
+    pub fn create_room(&mut self) -> RoomID {
         if self.next_room_id >= RoomID::max_value() {
             panic!("room id max");
         }
-        self.rooms[self.next_entry].add_room(self.next_room_id, info);
         let ret = self.next_room_id;
         self.room_id_map.insert(self.next_room_id, self.next_entry);
         self.next_room_id += 1;
         self.next_entry = (self.next_entry + 1) % self.rooms.len();
         ret
     }
-    pub fn join_room(&mut self, room_id:RoomID, info:RoomType::JoinInfoType) {
+    pub fn send_cmd(&mut self, room_id:RoomID, cmd:R::CommandType) {
         if let Some(thread_id) = self.room_id_map.get(&room_id) {
-            self.rooms[*thread_id].join_room(room_id, info);
+            self.rooms[*thread_id].send_command(room_id, cmd);
         } else {
             println!("room id {} not found", room_id);
         }

@@ -5,14 +5,13 @@ use ragtime::connection_manager::*;
 use ragtime::string_message::*;
 
 pub struct Input {
-    msg_chan_rx: Receiver<MessageOnChannel<StringMessage>>,
+//    msg_chan_rx: MsgChanRx<StringMessage>,
 }
 
 impl Input {
     pub fn new() -> Input {
-        let (tx, rx) = channel();
         Input {
-            msg_chan_rx: rx,
+//            msg_chan_rx: rx,
         }
     }
     pub fn start(&mut self) {}

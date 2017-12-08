@@ -100,7 +100,7 @@ impl<T: Message> ConnectionManager<T> {
 //             val.set_recv_msg_chan_tx(tx);
 //         }
 //     }
-    pub fn poll(&mut self) -> Option<(MsgChanTx<T>,MsgChanRx<T>)> {
+    pub fn poll(&mut self) -> Option<(ConnectionID,MsgChanTx<T>,MsgChanRx<T>)> {
         for (conn_id, conn) in self.connections.iter_mut() {
             conn.recv();
         }
@@ -112,8 +112,9 @@ impl<T: Message> ConnectionManager<T> {
                 let mut conn = Connection::new(self.next_conn_id, stream, s2c_rx, c2s_tx);
                 self.connections.insert(self.next_conn_id, conn);
                 println!("new connection {} {}", self.next_conn_id, addr);
+                let conn_id = self.next_conn_id;
                 self.next_conn_id += 1;
-                return Some((s2c_tx, c2s_rx))
+                return Some((conn_id, s2c_tx, c2s_rx))
             }
             Err(e) => {
                 // println!("no new connection");
