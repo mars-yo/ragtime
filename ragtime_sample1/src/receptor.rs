@@ -1,23 +1,28 @@
 extern crate ragtime;
+use std::collections::HashMap;
+use ragtime::network;
+use ragtime::string_message;
+use super::*;
 
-use ragtime::connection_manager::*;
-use ragtime::string_message::*;
-use ragtime::game_object_manager::*;
-use ragtime::entity_component::component::*;
-
-//新規接続用
-//新規CLが来たら、プレイヤーオブジェクトを生成、GameObjectManager,ConnectionManagerに登録する
-
-pub struct Receptor {}
+#[derive(Default)]
+pub struct Receptor {
+    cxns: HashMap<ConnectionID,(MsgTx,MsgRx)>,
+}
 
 impl Receptor {
     pub fn new() -> Receptor {
-        Receptor {}
+        Receptor {..Default::default()}
     }
 }
-impl Component for Receptor {
-    fn start(&mut self) {}
-    fn update(&mut self) {}
+impl Receptor {
+    fn update(&mut self) {
+        // recv msg from rx, do authentication
+        // wait authentication, return roomtype, roomid, cxnid,tx,rx
+    }
+    fn add_entry(&mut self, id:ConnectionID, tx:MsgTx, rx:MsgRx) {
+        self.cxns.insert(id, (tx,rx));
+    }
+
 }
 // impl MessageHandler for Receptor {
 //     pub fn on_message(&mut self, id: ConnectionID, msg: &StringMessage) {

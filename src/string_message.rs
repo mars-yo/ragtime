@@ -1,5 +1,5 @@
 use std::io::{Write, Read, BufReader, BufRead};
-use connection_manager::Message;
+use network::Message;
 use std::str::FromStr;
 
 pub struct StringMessage {

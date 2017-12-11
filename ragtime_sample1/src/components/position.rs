@@ -1,16 +1,15 @@
 extern crate ragtime;
 use std::ptr;
-use components::input::*;
+use components::input;
 
+#[derive(Default)]
 pub struct Position {
-    pos: (f32, f32),
+    pos: (f32,f32),
 }
 
 impl Position {
     pub fn new() -> Position {
-        Position {
-            pos: (0f32,0f32),
-        }
+        Position {..Default::default()}
     }
     pub fn start(&mut self) {}
     pub fn update(&mut self, speed: (f32,f32)) {

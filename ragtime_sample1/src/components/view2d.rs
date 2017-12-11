@@ -1,16 +1,17 @@
 extern crate ragtime;
 
-use ragtime::connection_manager::*;
-use ragtime::string_message::*;
+use ragtime::network;
+use ragtime::string_message;
+use super::super::*;
 
 pub struct View2D {
-    msg_chan_tx: MsgChanTx<StringMessage>,
+    msg_tx: MsgTx,
 }
 
 impl View2D {
-    pub fn new(msg_chan_tx: MsgChanTx<StringMessage>) -> View2D {
+    pub fn new(tx: MsgTx) -> View2D {
         View2D {
-          msg_chan_tx: msg_chan_tx,
+            msg_tx: tx,
         }
     }
     pub fn update(&mut self) {

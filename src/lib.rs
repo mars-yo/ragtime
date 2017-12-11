@@ -3,20 +3,10 @@ extern crate log;
 extern crate env_logger;
 
 #[macro_use]
-pub mod entity_component;
-pub mod connection_manager;
-pub mod db_manager;
-pub mod game_object_manager;
+pub mod network;
+pub mod db;
 pub mod string_message;
-pub mod room_manager;
-pub mod id_generator;
-
-//connection_managerはゲーム、ルーム共通にしたい
-
-// fn main() {
-//     //    let mut conn_manager = sub_component::game_logic::connection_manager::ConnectionManager::new("127.0.0.1:53000".to_string());
-//     sample1::sample1_start();
-// }
+pub mod room;
 
 #[test]
 fn test() {

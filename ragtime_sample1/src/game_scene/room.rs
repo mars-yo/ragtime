@@ -5,25 +5,26 @@ use std::sync::mpsc::{Sender,Receiver};
 use std::rc::Rc;
 use std::cell::RefCell;
 use game_scene::entities::player::*;
-use ragtime::room_manager::*;
-use ragtime::connection_manager::*;
+use ragtime::room::*;
+use ragtime::network::*;
 use ragtime::string_message::*;
 use super::object_manager::*;
+use super::super::*;
 
 pub type PlayerID = u64;
 
 pub struct JoinCommand {
-    msg_chan_tx: MsgChanTx<StringMessage>,
-    msg_chan_rx: MsgChanRx<StringMessage>,
     player_id:PlayerID,
+    msg_tx: MsgTx,
+    msg_rx: MsgRx,
 }
 
 impl JoinCommand {
-    pub fn new(player_id:PlayerID, tx: MsgChanTx<StringMessage>, rx: MsgChanRx<StringMessage>) -> JoinCommand {
+    pub fn new(player_id:PlayerID, tx: MsgTx, rx: MsgRx) -> JoinCommand {
         JoinCommand {
             player_id:player_id,
-            msg_chan_tx:tx,
-            msg_chan_rx:rx,
+            msg_tx:tx,
+            msg_rx:rx,
         }
     }
 }
@@ -61,10 +62,12 @@ impl Room for Sample1Room {
     }
     fn on_command(&mut self, cmd:&RoomCommand) {
 //         match cmd {
-//           JoinCommand(cmd) => {
-//               // new players
+//           RoomCommand::Join(cmd) => {
+              // new players
+              println!("join");
             
 //           }
+//         }
     }
     fn deletable(&self) -> bool {
         false

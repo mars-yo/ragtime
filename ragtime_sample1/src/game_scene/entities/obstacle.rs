@@ -1,12 +1,16 @@
 use std::slice::Iter;
-use components::input::*;
-use components::position::*;
+use components::*;
 
+#[derive(Default)]
 pub struct Obstacle {
     position: Position,
 }
 
 impl Obstacle {
+    fn new() -> Obstacle {
+        Obstacle{ ..Default::default() }
+    }
+    
     fn update_input(&mut self) {
     }
     fn update_position(&mut self) {

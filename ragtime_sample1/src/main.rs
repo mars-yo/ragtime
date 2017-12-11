@@ -16,11 +16,13 @@ use receptor::*;
 //use title_scene::room::*;
 use game_scene::room::*;
 
-use ragtime::connection_manager::*;
-use ragtime::db_manager::DBManager;
-use ragtime::game_object_manager::*;
-use ragtime::room_manager::*;
+use ragtime::network::*;
+use ragtime::db::*;
+use ragtime::room::*;
 use ragtime::string_message::*;
+
+type MsgTx = MsgChanTx<StringMessage>;
+type MsgRx = MsgChanRx<StringMessage>;
 
 struct Sample1Game {
 //    title_room_mgr: RoomManager<TitleRoom>,
@@ -51,8 +53,9 @@ impl Sample1Game {
         if let Some(cxn) = self.conn_mgr.poll() {
 //            self.new_cxns.push(cxn);
             // send cxn to title scene
+            let room_id = self.game_room_mgr.create_room();
             let cmd = JoinCommand::new(1,cxn.1,cxn.2);
-            self.game_room_mgr.send_cmd(1, RoomCommand::Join(cmd));
+            self.game_room_mgr.send_cmd(room_id, RoomCommand::Join(cmd));
         }
       
 //        self.new_cxns.retain(&Sample1Game::try_recv_data);

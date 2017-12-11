@@ -1,8 +1,8 @@
 extern crate ragtime;
 
 use std::sync::mpsc::*;
-use ragtime::connection_manager::*;
-use ragtime::string_message::*;
+use ragtime::network;
+use ragtime::string_message;
 
 pub struct Input {
 //    msg_chan_rx: MsgChanRx<StringMessage>,

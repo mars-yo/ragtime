@@ -1,6 +1,5 @@
 use std::slice::Iter;
-use components::input::*;
-use components::position::*;
+use components::*;
 
 pub struct Player {
     input: Input,
@@ -11,7 +10,7 @@ impl Player {
     pub fn new() -> Player {
         Player {
             input: Input::new(),
-            position: Position::new(),
+            position: Default::default(),
         }
     }
     fn update_input(&mut self) {

@@ -4,7 +4,6 @@ use std::borrow::Borrow;
 use std::thread;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::{Sender,Receiver};
-use entity_component::system::*;
 use std::collections::HashMap;
 
 //create room when id not found.
@@ -28,6 +27,7 @@ struct RoomsInThread<R:Room> {
 impl<R> RoomsInThread<R> where R:Room {
 
     fn new() -> RoomsInThread<R> {
+        // TODO immediately start thread.
         let (tx,rx) = channel();
         RoomsInThread {
             chan_tx:tx,

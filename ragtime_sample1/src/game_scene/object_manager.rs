@@ -1,7 +1,7 @@
 use components::*;
-use game_scene::entities::player::*;
-use game_scene::entities::obstacle::*;
+use game_scene::entities::*;
 
+#[derive(Default)]
 pub struct ObjectManager {
     players: Vec<Player>,
     obstacles : Vec<Obstacle>,
@@ -9,10 +9,7 @@ pub struct ObjectManager {
 
 impl ObjectManager {
     pub fn new() -> ObjectManager {
-        ObjectManager {
-            players: Vec::new(),
-            obstacles: Vec::new(),
-        }
+        ObjectManager {..Default::default()}
     }
     pub fn update(&mut self) {
         let pl_upd_it = Player::updaters();
