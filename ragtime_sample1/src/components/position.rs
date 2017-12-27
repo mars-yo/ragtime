@@ -1,6 +1,8 @@
 extern crate ragtime;
 use std::ptr;
 use components::input;
+use protocol::Protocol;
+
 
 #[derive(Default)]
 pub struct Position {
@@ -12,7 +14,7 @@ impl Position {
         Position {..Default::default()}
     }
     pub fn start(&mut self) {}
-    pub fn update(&mut self, speed: (f32,f32)) {
+    pub fn update(&mut self, protocols: &mut Vec<Protocol>, speed: (f32,f32)) {
         self.pos.0 += speed.0;
         self.pos.1 += speed.1;
     }

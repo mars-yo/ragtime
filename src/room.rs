@@ -36,9 +36,6 @@ impl<R> RoomsInThread<R> where R:Room {
     fn send_command(&mut self, id:RoomID, cmd:R::CommandType ) {
         self.chan_tx.send((id,cmd));
     }
-    fn deletable(r: &(RoomID,R)) -> bool {
-        r.1.deletable()
-    }
     fn start(&mut self) {
         // let (tx,rx):(Sender<Self::CommandType>,Receiver<Self::CommandType>) = channel();
         let (tx,rx) = channel();
@@ -63,8 +60,16 @@ impl<R> RoomsInThread<R> where R:Room {
                         rooms.push((id,room));
                     }
                 }
-//                let new_rooms: Vec<_> = rooms.iter().filter(|r| !r.1.deletable()).collect();
-                rooms.retain( &RoomsInThread::deletable );
+                
+                fn update<R:Room>(r: &mut (RoomID,R)) {
+                    r.1.update();
+                }
+                rooms.iter_mut().for_each(&update::<R>);
+                
+                fn alive<R:Room>(r: &(RoomID,R)) -> bool {
+                    !r.1.deletable()
+                }
+                rooms.retain( &alive::<R> );
                 thread::sleep(Duration::from_millis(1000));
             }
         });

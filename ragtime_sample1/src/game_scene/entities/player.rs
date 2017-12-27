@@ -1,5 +1,6 @@
 use std::slice::Iter;
 use components::*;
+use protocol::Protocol;
 
 pub struct Player {
     input: Input,
@@ -13,14 +14,14 @@ impl Player {
             position: Default::default(),
         }
     }
-    fn update_input(&mut self) {
-        self.input.update();
+    pub fn update_input(&mut self, protocols: &mut Vec<Protocol>) {
+        self.input.update(protocols);
     }
-    fn update_position(&mut self) {
-        self.position.update((0f32,0f32));
+    pub fn update_position(&mut self, protocols: &mut Vec<Protocol>) {
+        self.position.update(protocols, (0f32,0f32));
     }
-    pub fn updaters() -> [fn(&mut Player);2] {
-        [Player::update_input, Player::update_position]
-    }
+//     pub fn updaters() -> [fn(&mut Player);2] {
+//         [Player::update_input, Player::update_position]
+//     }
 
 }

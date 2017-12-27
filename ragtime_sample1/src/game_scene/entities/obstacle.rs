@@ -1,5 +1,6 @@
 use std::slice::Iter;
 use components::*;
+use protocol::Protocol;
 
 #[derive(Default)]
 pub struct Obstacle {
@@ -11,13 +12,13 @@ impl Obstacle {
         Obstacle{ ..Default::default() }
     }
     
-    fn update_input(&mut self) {
+    pub fn update_input(&mut self, protocols: &mut Vec<Protocol>) {
     }
-    fn update_position(&mut self) {
-        self.position.update((0f32,0f32));
+    pub fn update_position(&mut self, protocols: &mut Vec<Protocol>) {
+        self.position.update(protocols, (0f32,0f32));
     }
-    pub fn updaters() -> [fn(&mut Obstacle);2] {
-        [Obstacle::update_input, Obstacle::update_position]
-    }
+//     pub fn updaters() -> [fn(&mut Obstacle);2] {
+//         [Obstacle::update_input, Obstacle::update_position]
+//     }
 
 }

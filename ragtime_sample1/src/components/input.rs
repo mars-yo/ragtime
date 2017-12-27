@@ -3,6 +3,7 @@ extern crate ragtime;
 use std::sync::mpsc::*;
 use ragtime::network;
 use ragtime::string_message;
+use protocol::Protocol;
 
 pub struct Input {
 //    msg_chan_rx: MsgChanRx<StringMessage>,
@@ -14,8 +15,7 @@ impl Input {
 //            msg_chan_rx: rx,
         }
     }
-    pub fn start(&mut self) {}
-    pub fn update(&mut self) {
+    pub fn update(&mut self, protocols: &mut Vec<Protocol>) {
         //recv from chan
     }
 }

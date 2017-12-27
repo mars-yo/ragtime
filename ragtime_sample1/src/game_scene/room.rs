@@ -5,10 +5,10 @@ use std::sync::mpsc::{Sender,Receiver};
 use std::rc::Rc;
 use std::cell::RefCell;
 use game_scene::entities::player::*;
-use ragtime::room::*;
+use game_scene::common_entities::*;
+use game_scene::personal_entities::*;
 use ragtime::network::*;
-use ragtime::string_message::*;
-use super::object_manager::*;
+use super::*;
 use super::super::*;
 
 pub type PlayerID = u64;
@@ -36,7 +36,9 @@ pub enum RoomCommand {
 pub struct Sample1Room {
     id: RoomID,
     name: String,
-    object_mgr: ObjectManager,
+    common_entities: CommonEntities,
+    personal_entities: HashMap<PlayerID,PersonalEntities>,
+    players: HashMap<PlayerID, (MsgTx,MsgRx)>,
 }
 
 impl Room for Sample1Room {
@@ -47,18 +49,39 @@ impl Room for Sample1Room {
         Sample1Room {
             id: id,
             name: "".to_string(),
-            object_mgr: ObjectManager::new(),
+            common_entities: CommonEntities::new(),
+            personal_entities: HashMap::new(),
+            players: HashMap::new(),
         }
     }
     fn update(&mut self) {
         println!("room update");
-        // for ref elm in self.players.iter_mut() {
-        //     if let Ok(msg) = elm.0.try_recv() {
-        //         println!("room msg {}", msg.1.params()[0]);
-        //     }
-        // }
-        //check status
-        self.object_mgr.update();
+
+        let mut msgs:HashMap<PlayerID,Vec<Protocol>> = HashMap::new();
+        for (player_id, ref mut chan) in self.players.iter_mut() {
+            let rx = &chan.1;
+            if let Ok(msg) = rx.try_recv() {
+                println!("room msg {:?}", msg);
+                
+                let (conn_id, msg) = *msg;
+                
+                if msgs.contains_key(&player_id) {
+                    let v = msgs.get_mut(&player_id).unwrap();
+                    v.push(msg);
+                } else {
+                    let mut v = Vec::new();
+                    v.push(msg);
+                    msgs.insert( *player_id, v );
+                }
+            }
+        }
+
+        self.common_entities.update(&msgs);
+        for (player_id, msg) in msgs.iter_mut() {
+            if let Some(ents) = self.personal_entities.get_mut(player_id) {
+                ents.update(&msg);  
+            }  
+        }
     }
     fn on_command(&mut self, cmd:&RoomCommand) {
 //         match cmd {

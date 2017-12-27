@@ -4,6 +4,7 @@ extern crate ragtime;
 mod components;
 mod receptor;
 mod game_scene;
+mod protocol;
 
 use std::cell::RefCell;
 use std::rc::{Weak, Rc};
@@ -15,26 +16,26 @@ use receptor::*;
 
 //use title_scene::room::*;
 use game_scene::room::*;
+use protocol::*;
 
 use ragtime::network::*;
 use ragtime::db::*;
 use ragtime::room::*;
-use ragtime::string_message::*;
 
-type MsgTx = MsgChanTx<StringMessage>;
-type MsgRx = MsgChanRx<StringMessage>;
+type MsgTx = MsgChanTx<Protocol>;
+type MsgRx = MsgChanRx<Protocol>;
 
 struct Sample1Game {
 //    title_room_mgr: RoomManager<TitleRoom>,
     game_room_mgr:RoomManager<Sample1Room>,
-    conn_mgr: ConnectionManager<StringMessage>,
+    conn_mgr: ConnectionManager<Protocol>,
     db_manager: DBManager,
 }
 
 impl Sample1Game {
     fn new() -> Sample1Game {
 
-        let mut conn = ConnectionManager::<StringMessage>::new("127.0.0.1:8080".to_string());
+        let mut conn = ConnectionManager::<_>::new("127.0.0.1:8080".to_string());
 
         let grm = RoomManager::<Sample1Room>::new(2);
         let db = DBManager::new();

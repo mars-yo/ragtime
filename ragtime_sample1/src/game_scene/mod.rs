@@ -1,3 +1,4 @@
 pub mod entities;
-pub mod object_manager;
+pub mod common_entities;
+pub mod personal_entities;
 pub mod room;
