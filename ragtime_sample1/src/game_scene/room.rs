@@ -83,14 +83,13 @@ impl Room for Sample1Room {
             }  
         }
     }
-    fn on_command(&mut self, cmd:&RoomCommand) {
-//         match cmd {
-//           RoomCommand::Join(cmd) => {
-              // new players
-              println!("join");
-            
-//           }
-//         }
+    fn on_command(&mut self, cmd:RoomCommand) {
+        match cmd {
+            RoomCommand::Join(cmd) => {
+                println!("join {}", cmd.player_id);
+                self.players.insert(cmd.player_id,(cmd.msg_tx,cmd.msg_rx));      
+            }
+        }
     }
     fn deletable(&self) -> bool {
         false

@@ -15,7 +15,7 @@ pub type RoomID = u32;
 pub trait Room {
     type CommandType: Send + 'static;
     fn new(id:RoomID) -> Self;
-    fn on_command(&mut self, cmd:&Self::CommandType);
+    fn on_command(&mut self, cmd:Self::CommandType);
     fn update(&mut self);
     fn deletable(&self) -> bool;
 }
@@ -44,21 +44,34 @@ impl<R> RoomsInThread<R> where R:Room {
             let mut rooms = Vec::<(RoomID,R)>::new();
             loop {
                 if let Ok(cmd) = rx.try_recv() {
-                    let (id, cmd) = cmd;
+                    let (room_id, cmd) = cmd;
                     let mut found = false;
-                    for r in rooms.iter_mut() {
-                        let (room_id, ref mut room) = *r;
-                        if room_id == id {
-                            room.on_command(&cmd);
+                    {
+                        let room = rooms.iter().find(|r| r.0 == room_id);
+                        if room.is_some() {
                             found = true;
-                            break;
                         }
                     }
                     if !found {
-                        let mut room = R::new(id);
-                        room.on_command(&cmd);
-                        rooms.push((id,room));
+                        let new_room = (room_id, R::new(room_id));
+                        rooms.push( new_room );
                     }
+                    let room = rooms.iter_mut().find(|r| r.0 == room_id).unwrap();
+                    room.1.on_command(cmd);
+//                     let mut found = false;
+//                     for r in rooms.iter_mut() {
+//                         let (room_id, ref mut room) = *r;
+//                         if room_id == id {
+//                             room.on_command(cmd);
+//                             found = true;
+//                             break;
+//                         }
+//                     }
+//                     if !found {
+//                         let mut room = R::new(id);
+//                         room.on_command(cmd);
+//                         rooms.push((id,room));
+//                     }
                 }
                 
                 fn update<R:Room>(r: &mut (RoomID,R)) {

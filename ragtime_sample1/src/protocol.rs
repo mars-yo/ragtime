@@ -23,9 +23,9 @@ impl Message for Protocol {
         if v.is_empty() { return false; }
         
         let command = v.get(0).unwrap();
-        
+        println!("{:?}", command);
         if *command == "speed" {
-                
+            *self = Protocol::Speed((0f32,0f32));
         }
         true
     }

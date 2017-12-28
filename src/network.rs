@@ -11,6 +11,7 @@ use std::net::ToSocketAddrs;
 use std::net::SocketAddr;
 use std::io::{Write, Read, BufReader, BufRead};
 use std::mem;
+use std::fmt::Debug;
 use self::byteorder::{BigEndian, ByteOrder};
 
 //デフォルトハンドラをどうしよう、FnMutのクローンできない？
@@ -25,7 +26,7 @@ pub trait Message {
     fn read_from<T: BufRead>(&mut self, reader: &mut T) -> bool;
 }
 
-struct Connection<T: Message> {
+struct Connection<T: Message+Debug> {
     id: ConnectionID,
     send_stream: TcpStream,
     recv_buffer: BufReader<TcpStream>,
@@ -34,7 +35,7 @@ struct Connection<T: Message> {
     c2s_chan_tx: MsgChanTx<T>,
 }
 
-impl<T: Message> Connection<T> {
+impl<T: Message+Debug> Connection<T> {
     fn new(id: ConnectionID, stream: TcpStream, s2c_rx: MsgChanRx<T>, c2s_tx: MsgChanTx<T>) -> Connection<T> {
         let buf = BufReader::with_capacity(1024, stream.try_clone().unwrap());
         Connection::<T> {
@@ -64,14 +65,14 @@ impl<T: Message> Connection<T> {
 //     }
 }
 
-pub struct ConnectionManager<T: Message> {
+pub struct ConnectionManager<T: Message+Debug> {
     next_conn_id: ConnectionID,
     listener: TcpListener,
     connections: HashMap<ConnectionID, Connection<T>>,
 //    default_recv_msg_chan_tx: Sender<MessageOnChannel<T>>,
 }
 
-impl<T: Message> ConnectionManager<T> {
+impl<T: Message+Debug> ConnectionManager<T> {
     pub fn new(addr: String) -> ConnectionManager<T> {
         let listener = TcpListener::bind(addr.as_str()).expect("listener bind error");
         listener
