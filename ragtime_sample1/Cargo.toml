@@ -5,3 +5,4 @@ authors = ["myoshida <myoshida@aiming-inc.com>"]
 
 [dependencies]
 ragtime = { path = ".." }
+ws = "*"
