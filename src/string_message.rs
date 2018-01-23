@@ -1,12 +1,12 @@
 use std::io::{Write, Read, BufReader, BufRead};
-use network::Message;
+use network::Serialize;
 use std::str::FromStr;
 
 pub struct StringMessage {
     body: String,
 }
 
-impl Message for StringMessage {
+impl Serialize for StringMessage {
     fn new() -> StringMessage {
         StringMessage { body: String::new() }
     }

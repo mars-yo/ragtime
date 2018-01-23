@@ -13,26 +13,6 @@ use super::super::*;
 
 pub type PlayerID = u64;
 
-pub struct JoinCommand {
-    player_id:PlayerID,
-    msg_tx: MsgTx,
-    msg_rx: MsgRx,
-}
-
-impl JoinCommand {
-    pub fn new(player_id:PlayerID, tx: MsgTx, rx: MsgRx) -> JoinCommand {
-        JoinCommand {
-            player_id:player_id,
-            msg_tx:tx,
-            msg_rx:rx,
-        }
-    }
-}
-
-pub enum RoomCommand {
-    Join(JoinCommand),
-}
-
 pub struct Sample1Room {
     id: RoomID,
     name: String,
@@ -42,7 +22,7 @@ pub struct Sample1Room {
 }
 
 impl Room for Sample1Room {
-    type CommandType = RoomCommand;
+    type CommandType = (UserID, Command);
 
     fn new(id:RoomID) -> Sample1Room {
         println!("new room");
@@ -54,34 +34,36 @@ impl Room for Sample1Room {
             players: HashMap::new(),
         }
     }
-    fn update(&mut self) {
+    fn update(&mut self, commands:Vec<CommandType>) {
         println!("room update");
 
-        let mut msgs:HashMap<PlayerID,Vec<Protocol>> = HashMap::new();
-        for (player_id, ref mut chan) in self.players.iter_mut() {
-            let rx = &chan.1;
-            if let Ok(msg) = rx.try_recv() {
-                println!("room msg {:?}", msg);
+//         let mut msgs:HashMap<PlayerID,Vec<Protocol>> = HashMap::new();
+//         for (player_id, ref mut chan) in self.players.iter_mut() {
+//             let rx = &chan.1;
+//             if let Ok(msg) = rx.try_recv() {
+//                 println!("room msg {:?}", msg);
                 
-                let (conn_id, msg) = *msg;
+//                 let (conn_id, msg) = *msg;
                 
-                if msgs.contains_key(&player_id) {
-                    let v = msgs.get_mut(&player_id).unwrap();
-                    v.push(msg);
-                } else {
-                    let mut v = Vec::new();
-                    v.push(msg);
-                    msgs.insert( *player_id, v );
-                }
-            }
-        }
+//                 if msgs.contains_key(&player_id) {
+//                     let v = msgs.get_mut(&player_id).unwrap();
+//                     v.push(msg);
+//                 } else {
+//                     let mut v = Vec::new();
+//                     v.push(msg);
+//                     msgs.insert( *player_id, v );
+//                 }
+//             }
+//         }
+        
+        // process not-connection-associated commands.(eg.Join)
 
-        self.common_entities.update(&msgs);
-        for (player_id, msg) in msgs.iter_mut() {
-            if let Some(ents) = self.personal_entities.get_mut(player_id) {
-                ents.update(&msg);  
-            }  
-        }
+        self.common_entities.update(&commands);
+//         for (player_id, msg) in msgs.iter_mut() {
+//             if let Some(ents) = self.personal_entities.get_mut(player_id) {
+//                 ents.update(&msg);  
+//             }  
+//         }
     }
     fn on_command(&mut self, cmd:RoomCommand) {
         match cmd {

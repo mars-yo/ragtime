@@ -14,7 +14,7 @@ impl CommonEntities {
     pub fn new() -> CommonEntities {
         CommonEntities {..Default::default()}
     }
-    pub fn update(&mut self, input: &HashMap<PlayerID,Vec<Protocol>>) {
+    pub fn update(&mut self, commands: &Vec<(UserID,Command)>) {
         
         let mut protocols = Vec::new();
         self.players.iter_mut().for_each( |o| o.update_input(&mut protocols) );

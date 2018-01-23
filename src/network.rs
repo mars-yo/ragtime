@@ -14,65 +14,50 @@ use std::mem;
 use std::fmt::Debug;
 use self::byteorder::{BigEndian, ByteOrder};
 
-//デフォルトハンドラをどうしよう、FnMutのクローンできない？
-
 pub type ConnectionID = u32;
-pub type MsgOnChannel<T> = Box<(ConnectionID,T)>;
-pub type MsgChanTx<T> = Sender<MsgOnChannel<T>>;
-pub type MsgChanRx<T> = Receiver<MsgOnChannel<T>>;
 
-pub trait Message {
+pub trait Serialize {
     fn new() -> Self;
     fn read_from<T: BufRead>(&mut self, reader: &mut T) -> bool;
 }
 
-struct Connection<T: Message+Debug> {
+struct Connection<T: Serialize+Debug> {
     id: ConnectionID,
     send_stream: TcpStream,
     recv_buffer: BufReader<TcpStream>,
     message: T,
-    s2c_chan_rx: MsgChanRx<T>,
-    c2s_chan_tx: MsgChanTx<T>,
 }
 
-impl<T: Message+Debug> Connection<T> {
-    fn new(id: ConnectionID, stream: TcpStream, s2c_rx: MsgChanRx<T>, c2s_tx: MsgChanTx<T>) -> Connection<T> {
+impl<T: Serialize+Debug> Connection<T> {
+    fn new(id: ConnectionID, stream: TcpStream) -> Connection<T> {
         let buf = BufReader::with_capacity(1024, stream.try_clone().unwrap());
         Connection::<T> {
             id: id,
             send_stream: stream,
             recv_buffer: buf,
-            message: Message::new(),
-            s2c_chan_rx: s2c_rx,
-            c2s_chan_tx: c2s_tx,
+            message: Serialize::new(),
         }
     }
-    fn recv(&mut self) {
+    fn recv(&mut self) -> Option<T> {
         if self.message.read_from(&mut self.recv_buffer) {
             let mut msg = T::new();
             mem::swap(&mut msg, &mut self.message);
-            self.c2s_chan_tx.send(Box::new((self.id,msg)));
+            return Some(msg);
         }
+        None
     }
     fn send(&mut self, data: &[u8]) {
         self.send_stream.write_all(data);
     }
-//     fn s2c_chan_tx(&self) -> MsgChanTx<T> {
-//         self.s2c_chan_tx.clone()
-//     }
-//     fn set_c2s_chan_tx(&mut self, tx: MsgChanTx<T>) {
-//         self.c2s_chan_tx = tx;
-//     }
 }
 
-pub struct ConnectionManager<T: Message+Debug> {
+pub struct ConnectionManager<T: Serialize+Debug> {
     next_conn_id: ConnectionID,
     listener: TcpListener,
     connections: HashMap<ConnectionID, Connection<T>>,
-//    default_recv_msg_chan_tx: Sender<MessageOnChannel<T>>,
 }
 
-impl<T: Message+Debug> ConnectionManager<T> {
+impl<T: Serialize+Debug> ConnectionManager<T> {
     pub fn new(addr: String) -> ConnectionManager<T> {
         let listener = TcpListener::bind(addr.as_str()).expect("listener bind error");
         listener
@@ -90,37 +75,28 @@ impl<T: Message+Debug> ConnectionManager<T> {
             val.send(data.as_slice());
         }
     }
-//     pub fn send_msg_chan(&self, conn_id:ConnectionID) -> Option<Sender<MessageOnChannel<T>>> {
-//         if let Some(val) = self.connections.get(&conn_id) {
-//             return Some(val.send_msg_chan_tx())
-//         }
-//         None
-//     }
-//     pub fn set_recv_message_chan(&mut self, conn_id: ConnectionID, tx: Sender<MessageOnChannel<T>>) {
-//         if let Some(val) = self.connections.get_mut(&conn_id) {
-//             val.set_recv_msg_chan_tx(tx);
-//         }
-//     }
-    pub fn poll(&mut self) -> Option<(ConnectionID,MsgChanTx<T>,MsgChanRx<T>)> {
-        for (conn_id, conn) in self.connections.iter_mut() {
-            conn.recv();
-        }
+    pub fn listen(&mut self) -> Option<ConnectionID> {
         match self.listener.accept() {
             Ok((stream, addr)) => {
                 stream.set_nonblocking(true);
-                let (s2c_tx, s2c_rx) = channel();
-                let (c2s_tx, c2s_rx) = channel();
-                let mut conn = Connection::new(self.next_conn_id, stream, s2c_rx, c2s_tx);
+                let mut conn = Connection::new(self.next_conn_id, stream);
                 self.connections.insert(self.next_conn_id, conn);
                 println!("new connection {} {}", self.next_conn_id, addr);
                 let conn_id = self.next_conn_id;
                 self.next_conn_id += 1;
-                return Some((conn_id, s2c_tx, c2s_rx))
+                return Some(conn_id);
             }
             Err(e) => {
                 // println!("no new connection");
             }
         }
         None
+    }
+    pub fn recv<F>(&mut self, f:F) where F:Fn(ConnectionID,T) -> () {
+        for (conn_id, conn) in self.connections.iter_mut() {
+            if let Some(msg) = conn.recv() {
+                f(*conn_id, msg);
+            }
+        }
     }
 }
