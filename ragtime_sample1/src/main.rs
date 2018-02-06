@@ -2,15 +2,33 @@
 extern crate ragtime;
 extern crate ws;
 
-struct Router {
-    // sender: ws::Sender,
-    // inner: Box<ws::Handler>,
+//mod components;
+mod game;
+
+use std::time::Duration;
+use std::sync::mpsc;
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::thread;
+use ragtime::room;
+//use game_scene::room::*;
+
+struct Handler<M> where M:Send {
+    tx: mpsc::Sender<M>,
+    // room_sender: Sender;
+}
+impl<M> Handler<M> where M:Send+'static {
+    fn new(tx:mpsc::Sender<M>) -> Self {
+        Self {
+            tx: tx,
+        }
+    }
 }
 
-impl ws::Handler for Router {
+impl<M> ws::Handler for Handler<M> where M:Send+'static {
     fn on_request(&mut self, req: &ws::Request) -> ws::Result<(ws::Response)> {
 
-        println!("====== {}", req.resource());
+        println!("on request {:?}", thread::current().id());
         let mut res = try!(ws::Response::from_request(req));
         res.set_status(404);
         res.set_reason("Not Found");
@@ -31,6 +49,8 @@ impl ws::Handler for Router {
     }
 
     fn on_message(&mut self, msg: ws::Message) -> ws::Result<()> {
+        // self.room_sender.send(msg);
+        //login request?
         Ok(())
     }
 
@@ -41,33 +61,61 @@ impl ws::Handler for Router {
     }
 }
 
-struct Sample1Game {
-//    game_room_mgr:RoomManager<Sample1Room>,
-}
 
-impl Sample1Game {
-    fn new() -> Sample1Game {
-        Sample1Game{}
+#[derive(Default)]
+struct Lobby<M> where M:Send+'static {
+    receivers: Vec<(mpsc::Receiver<M>,ws::Sender)>,
+}
+impl<M> Lobby<M> where M:Send+Default+'static {
+    fn new() -> Lobby<M> {
+        Lobby::<M> {
+            ..Default::default()
+//            receivers: Vec::new(),
+        }
     }
-    fn update(&mut self) {
+    fn poll<F>(&mut self, mut handler:F) where F:FnMut(&M) -> bool {
+        self.receivers.retain(|entry| {
+            if let Ok(cmd) = entry.0.try_recv() {
+                if handler(&cmd) {
+                    return false;
+                }
+            }
+            true
+        });
     }
-    fn on_connect(&self, sender: ws::Sender) -> Router {
-        Router{}
+    fn accept(&mut self, rx:mpsc::Receiver<M>, sender:ws::Sender) {
+        self.receivers.push((rx,sender));
     }
 }
 
 pub fn sample1_start() {
-    let mut game = Sample1Game::new();
-    // loop {
-    //     game.update();
-    //     thread::sleep(Duration::from_millis(1000));
-    // }
-   if let Err(error) = ws::listen("127.0.0.1:3012", |out| {
-       game.on_connect(out)
-    })
-     {
-        println!("Failed to create WebSocket due to {:?}", error);
+    let room_tx = room::start_thread::<game::Sample1Room>();
+    let lobby = Arc::new(Mutex::new(Lobby::<String>::new()));
+    
+    let lobby_clone = lobby.clone();
+    thread::spawn(move||{
+        if let Err(error) = ws::listen("127.0.0.1:3012", |out| {
+//            println!("connect {:?}", thread::current().id());
+            let (tx,rx) = mpsc::channel();
+            let mut lb = lobby_clone.lock().unwrap();
+            lb.accept(rx, out);
+            Handler{tx}
+        }) {
+            println!("Failed to create WebSocket due to {:?}", error);
+        }
+    });
+
+    loop {
+        let mut lb = lobby.lock().unwrap();
+        lb.poll(|msg|{
+            if msg == "login" {
+                return true
+            }
+            false
+        });
+        thread::sleep(Duration::from_millis(1000));
     }
+
 }
 
 fn main() {
