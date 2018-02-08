@@ -10,14 +10,15 @@ use std::sync::mpsc;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::thread;
+use std::str::FromStr;
 use ragtime::room;
 //use game_scene::room::*;
 
-struct Handler<M> where M:Send {
+struct Handler<M> where M:Send+FromStr+'static {
     tx: mpsc::Sender<M>,
     // room_sender: Sender;
 }
-impl<M> Handler<M> where M:Send+'static {
+impl<M> Handler<M> where M:Send+FromStr+'static {
     fn new(tx:mpsc::Sender<M>) -> Self {
         Self {
             tx: tx,
@@ -25,16 +26,16 @@ impl<M> Handler<M> where M:Send+'static {
     }
 }
 
-impl<M> ws::Handler for Handler<M> where M:Send+'static {
-    fn on_request(&mut self, req: &ws::Request) -> ws::Result<(ws::Response)> {
+impl<M> ws::Handler for Handler<M> where M:Send+FromStr+'static {
+    // fn on_request(&mut self, req: &ws::Request) -> ws::Result<(ws::Response)> {
 
-        println!("on request {:?}", thread::current().id());
-        let mut res = try!(ws::Response::from_request(req));
-        res.set_status(404);
-        res.set_reason("Not Found");
-        Ok(res)
+    //     println!("on request {:?}", thread::current().id());
+    //     let mut res = try!(ws::Response::from_request(req));
+    //     res.set_status(404);
+    //     res.set_reason("Not Found");
+    //     Ok(res)
 
-    }
+    // }
 
     // Pass through any other methods that should be delegated to the child.
     //
@@ -51,6 +52,11 @@ impl<M> ws::Handler for Handler<M> where M:Send+'static {
     fn on_message(&mut self, msg: ws::Message) -> ws::Result<()> {
         // self.room_sender.send(msg);
         //login request?
+        if let ws::Message::Text(msg) = msg {
+            if let Ok(msg) = M::from_str(&msg) {
+                self.tx.send(msg);
+            }
+        }
         Ok(())
     }
 
@@ -108,6 +114,7 @@ pub fn sample1_start() {
     loop {
         let mut lb = lobby.lock().unwrap();
         lb.poll(|msg|{
+            println!("received {}", msg);
             if msg == "login" {
                 return true
             }
